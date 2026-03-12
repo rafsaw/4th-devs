@@ -51,6 +51,8 @@ If both keys are present, provider defaults to OpenAI. Override with `AI_PROVIDE
 | `01_01_interaction` | `npm run lesson1:interaction` | Multi-turn conversation via input history |
 | `01_01_structured` | `npm run lesson1:structured` | Structured JSON output with schema validation |
 | `01_01_grounding` | `npm run lesson1:grounding` | Fact-checked HTML from markdown notes |
+| `01_01_zadanie`     | `npm run lesson1:zadanie`     | People.csv filtering + job tagging exercise |
+
 
 Install dependencies:
 
