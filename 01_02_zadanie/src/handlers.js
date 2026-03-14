@@ -1,5 +1,11 @@
+import { writeFile } from "node:fs/promises";
+import path from "node:path";
+import { fileURLToPath } from "node:url";
 import { loadSuspectsFromFile } from "./people.js";
 import { buildAnalysisReport, saveReportToFile } from "./report.js";
+
+const MODULE_DIR = path.dirname(fileURLToPath(import.meta.url));
+const FINDHIM_LOCATIONS_PATH = path.resolve(MODULE_DIR, "..", "findhim_locations.json");
 
 const DATA_BASE_URL = "https://hub.ag3nts.org/data";
 const LOCATION_ENDPOINT = "https://hub.ag3nts.org/api/location";
@@ -101,6 +107,14 @@ const normalizeLocationsResponse = (payload) => {
   return list.map(normalizeLocation);
 };
 
+const getRawLocationList = (payload) => (
+  Array.isArray(payload?.locations)
+    ? payload.locations
+    : Array.isArray(payload)
+      ? payload
+      : []
+);
+
 const normalizeAccessLevelResponse = (payload) => {
   const candidate = payload?.accessLevel ?? payload?.access_level ?? payload?.level ?? payload;
   const value = Number.parseInt(String(candidate), 10);
@@ -138,6 +152,12 @@ const fetchPowerPlants = async (apiKey) => {
     const message = data?.message ?? `Power plants request failed (${response.status})`;
     throw new Error(message);
   }
+
+  await writeFile(
+    FINDHIM_LOCATIONS_PATH,
+    `${JSON.stringify(data, null, 2)}\n`,
+    "utf-8",
+  );
 
   if (Array.isArray(data)) {
     return data.map((item) => ({
@@ -212,6 +232,7 @@ export const createHandlers = ({ apiKey, state }) => {
         name,
         surname,
         birthYear: Number.parseInt(String(birthYear), 10),
+        apiLocations: getRawLocationList(locationsPayload),
         locations: normalizeLocationsResponse(locationsPayload),
         accessLevel: normalizeAccessLevelResponse(accessPayload),
       };

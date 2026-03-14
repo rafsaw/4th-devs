@@ -76,6 +76,7 @@ export const buildAnalysisReport = ({ suspects, plants, observations }) => {
       surname: observation.surname,
       birthYear: observation.birthYear,
       accessLevel: observation.accessLevel,
+      apiLocations: observation.apiLocations ?? [],
       checkedLocations: observation.locations.length,
       bestHit: {
         powerPlant: bestHit?.nearestPlant.code ?? null,
