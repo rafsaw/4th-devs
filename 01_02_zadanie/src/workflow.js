@@ -10,10 +10,64 @@ import { tools } from "./tools.js";
 
 const MODEL = resolveModelForProvider("gpt-4.1-mini");
 const MAX_TOOL_STEPS = 15;
+const DEBUG_ENABLED = ["1", "true", "yes", "on"].includes(
+  String(process.env.FINDHIM_DEBUG ?? "").trim().toLowerCase(),
+);
 
 const previewText = (value, maxLength = 220) => {
   const text = String(value ?? "").replace(/\s+/g, " ").trim();
   return text.length > maxLength ? `${text.slice(0, maxLength)}...` : text;
+};
+
+const previewJson = (value, maxLength = 300) => {
+  try {
+    return previewText(JSON.stringify(value), maxLength);
+  } catch {
+    return previewText(String(value), maxLength);
+  }
+};
+
+const debugLog = (label, payload) => {
+  if (!DEBUG_ENABLED) {
+    return;
+  }
+
+  if (payload === undefined) {
+    console.log(`[debug] ${label}`);
+    return;
+  }
+
+  console.log(`[debug] ${label}: ${previewJson(payload)}`);
+};
+
+const summarizeToolResult = (toolName, result) => {
+  if (toolName === "load_suspects") {
+    return { count: result?.count };
+  }
+
+  if (toolName === "load_power_plants") {
+    return { count: result?.count };
+  }
+
+  if (toolName === "fetch_person_context") {
+    return {
+      person: `${result?.entry?.name ?? "?"} ${result?.entry?.surname ?? "?"}`.trim(),
+      locationsCount: result?.entry?.locations?.length ?? 0,
+      accessLevel: result?.entry?.accessLevel ?? null,
+    };
+  }
+
+  if (toolName === "build_report") {
+    return {
+      winner: result?.winner
+        ? `${result.winner.name} ${result.winner.surname}`
+        : null,
+      distanceKm: result?.winner?.distanceKm ?? null,
+      powerPlant: result?.winner?.powerPlant ?? null,
+    };
+  }
+
+  return result;
 };
 
 const readJsonResponse = async (response, contextLabel) => {
@@ -50,6 +104,9 @@ const getFinalText = (response) =>
   ?? "";
 
 const requestResponse = async ({ conversation, instructions }) => {
+  debugLog("request.model", MODEL);
+  debugLog("request.conversationItems", conversation.length);
+
   const body = buildResponsesRequest({
     model: MODEL,
     input: conversation,
@@ -73,17 +130,23 @@ const requestResponse = async ({ conversation, instructions }) => {
     throw new Error(message);
   }
 
+  debugLog("response.outputItems", data?.output?.length ?? 0);
   return data;
 };
 
-const executeToolCall = async (toolCall, handlers) => {
+const executeToolCall = async (toolCall, handlers, stepIndex) => {
   const handler = handlers[toolCall.name];
   if (!handler) {
     throw new Error(`Unknown tool call: ${toolCall.name}`);
   }
 
   const args = JSON.parse(toolCall.arguments || "{}");
+  debugLog(`step.${stepIndex}.tool_call.${toolCall.name}.args`, args);
   const result = await handler(args);
+  debugLog(
+    `step.${stepIndex}.tool_call.${toolCall.name}.result`,
+    summarizeToolResult(toolCall.name, result),
+  );
 
   return {
     type: "function_call_output",
@@ -92,11 +155,11 @@ const executeToolCall = async (toolCall, handlers) => {
   };
 };
 
-const buildNextConversation = async (conversation, toolCalls, handlers) => {
+const buildNextConversation = async (conversation, toolCalls, handlers, stepIndex) => {
   const outputs = [];
 
   for (const toolCall of toolCalls) {
-    const output = await executeToolCall(toolCall, handlers);
+    const output = await executeToolCall(toolCall, handlers, stepIndex);
     outputs.push(output);
   }
 
@@ -136,16 +199,22 @@ export const runWorkflow = async ({ apiKey, instructions = defaultInstructions }
   let finalText = "";
 
   while (stepsRemaining > 0) {
+    const stepIndex = MAX_TOOL_STEPS - stepsRemaining + 1;
+    debugLog("step.start", { stepIndex, stepsRemaining });
+
     stepsRemaining -= 1;
     const response = await requestResponse({ conversation, instructions });
     const toolCalls = getToolCalls(response);
+    debugLog(`step.${stepIndex}.tool_calls`, toolCalls.map((call) => call.name));
 
     if (toolCalls.length === 0) {
       finalText = getFinalText(response);
+       debugLog(`step.${stepIndex}.final_text`, finalText);
       break;
     }
 
-    conversation = await buildNextConversation(conversation, toolCalls, handlers);
+    conversation = await buildNextConversation(conversation, toolCalls, handlers, stepIndex);
+    debugLog(`step.${stepIndex}.conversationItemsAfter`, conversation.length);
   }
 
   if (!state.report) {
