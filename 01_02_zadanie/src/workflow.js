@@ -7,6 +7,7 @@ import {
 } from "../../config.js";
 import { createHandlers } from "./handlers.js";
 import { tools } from "./tools.js";
+import { finalSummarySchema } from "./schemas.js";
 
 const MODEL = resolveModelForProvider("gpt-4.1-mini");
 const MAX_TOOL_STEPS = 15;
@@ -103,6 +104,20 @@ const getFinalText = (response) =>
   ?? response.output?.find((item) => item.type === "message")?.content?.[0]?.text
   ?? "";
 
+const getFinalJson = (response) => {
+  const text = response.output_text
+    ?? response.output?.find((item) => item.type === "message")?.content?.[0]?.text
+    ?? "";
+  if (!text) {
+    throw new Error("Missing structured final output text.");
+  }
+  try {
+    return JSON.parse(text);
+  } catch {
+    throw new Error(`Final output is not valid JSON: ${text.slice(0, 200)}...`);
+  }
+};
+
 const requestResponse = async ({ conversation, instructions, tracer, stepIndex }) => {
   debugLog("request.model", MODEL);
   debugLog("request.conversationItems", conversation.length);
@@ -112,6 +127,7 @@ const requestResponse = async ({ conversation, instructions, tracer, stepIndex }
     input: conversation,
     tools,
     instructions,
+    text: { format: finalSummarySchema }
   });
   tracer?.record("llm.request", {
     stepIndex,
@@ -200,7 +216,7 @@ Required order:
 2) load_power_plants
 3) for each suspect call fetch_person_context(name, surname, birthYear)
 4) call build_report once all observations are collected.
-When done, provide a short plain-text summary of who won and why.
+When done, provide a summary of who won and why. Return final result as JSON matching provided schema.
 `.trim();
 
 export const createWorkflowState = () => ({
@@ -223,6 +239,7 @@ export const runWorkflow = async ({ apiKey, instructions = defaultInstructions, 
 
   let stepsRemaining = MAX_TOOL_STEPS;
   let finalText = "";
+  let finalStructured = null;
 
   while (stepsRemaining > 0) {
     const stepIndex = MAX_TOOL_STEPS - stepsRemaining + 1;
@@ -247,13 +264,20 @@ export const runWorkflow = async ({ apiKey, instructions = defaultInstructions, 
 
     if (toolCalls.length === 0) {
       finalText = getFinalText(response);
+      finalStructured = getFinalJson(response);
       debugLog(`workflow.step.${stepIndex}.final_text`, finalText);
-      tracer?.record("workflow.step.final_text", {
+      debugLog(`workflow.step.${stepIndex}.final_structured`, finalStructured);
+      tracer?.record("workflow.step.final_output", {
         stepIndex,
-        finalText,
+        source: "responses_api",
+        hasToolCalls: false,
+        format: finalStructured ? "structured_json" : "plain_text",
+        text: finalText || null,
+        structured: finalStructured || null,
       });
       break;
     }
+
     /*
      RS> executeToolCall is inside buildNextConversation
     */
@@ -272,5 +296,6 @@ export const runWorkflow = async ({ apiKey, instructions = defaultInstructions, 
   return {
     state,
     finalText,
+    finalStructured,
   };
 };

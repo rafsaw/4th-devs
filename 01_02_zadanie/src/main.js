@@ -51,25 +51,35 @@ const main = async () => {
   const apiKey = resolveAiDevsApiKey();
   const tracer = createTraceRecorder();
 
-  const { state, finalText } = await runWorkflow({ apiKey, tracer });
-  const finalize = await runDeterministicFinalize({
-    apiKey,
-    report: state.report,
-    tracer,
-  });
-  const tracePath = await tracer.save();
+  try {
+    const { state, finalText, finalStructured } = await runWorkflow({ apiKey, tracer });
+    const finalize = await runDeterministicFinalize({
+      apiKey,
+      report: state.report,
+      tracer,
+    });
 
-  console.log("[workflow] assistant summary:");
-  console.log(finalText || "(no textual summary)");
-  console.log("");
-  console.log("[workflow] winner:");
-  console.log(state.report.winner);
-  console.log("");
-  console.log("[verify] response:");
-  console.log(finalize.verifyResponse);
-  console.log("");
-  console.log(`[verify] result written to ${getDefaultResultPath()}`);
-  console.log(`[trace] timeline written to ${tracePath || getDefaultTracePath()}`);
+    console.log("[workflow] assistant summary:");
+    if (finalStructured) {
+      console.log(finalStructured);
+      tracer.record("workflow.final.structured_summary", finalStructured);
+    } else {
+      console.log(finalText || "(no textual summary)");
+      tracer.record("workflow.final.textual_summary", finalText);
+    }
+
+    console.log("");
+    console.log("[workflow] winner:");
+    console.log(state.report.winner);
+    console.log("");
+    console.log("[verify] response:");
+    console.log(finalize.verifyResponse);
+    console.log("");
+    console.log(`[verify] result written to ${getDefaultResultPath()}`);
+  } finally {
+    const tracePath = await tracer.save();
+    console.log(`[trace] timeline written to ${tracePath || getDefaultTracePath()}`);
+  }
 };
 
 main().catch((error) => {
