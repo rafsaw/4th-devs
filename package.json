@@ -14,6 +14,7 @@
     "lesson2:tool_use": "node ./01_02_tool_use/app.js",
     "lesson2:tools": "node ./01_02_tools/app.js",
     "lesson2:minimal": "node ./01_02_tools/app.js",
+    "lesson2:findhim": "node ./01_02_zadanie/src/main.js",
     "lesson3:install": "npm install --prefix ./mcp/files-mcp && npm install --prefix ./01_03_mcp_core && npm install --prefix ./01_03_mcp_native && npm install --prefix ./01_03_mcp_translator && npm install --prefix ./01_03_upload_mcp",
     "lesson3:mcp_core": "node ./01_03_mcp_core/app.js",
     "lesson3:mcp_native": "node ./01_03_mcp_native/app.js",
