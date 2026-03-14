@@ -2,7 +2,7 @@ import { writeFile } from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { loadSuspectsFromFile } from "./people.js";
-import { buildAnalysisReport, saveReportToFile } from "./report.js";
+import { buildAnalysisReport, getDefaultReportPath, saveReportToFile } from "./report.js";
 
 const MODULE_DIR = path.dirname(fileURLToPath(import.meta.url));
 const FINDHIM_LOCATIONS_PATH = path.resolve(MODULE_DIR, "..", "findhim_locations.json");
@@ -47,8 +47,12 @@ const wait = (ms) => new Promise((resolve) => {
   setTimeout(resolve, ms);
 });
 
-const geocodeCityInPoland = async (city) => {
+const geocodeCityInPoland = async (city, tracer) => {
   if (geocodeCache.has(city)) {
+    tracer?.record("tool.http.cache_hit", {
+      source: "geocode_city",
+      city,
+    });
     return geocodeCache.get(city);
   }
 
@@ -59,7 +63,14 @@ const geocodeCityInPoland = async (city) => {
     limit: "1",
   });
 
-  const response = await fetch(`${GEOCODE_ENDPOINT}?${query.toString()}`, {
+  const url = `${GEOCODE_ENDPOINT}?${query.toString()}`;
+  tracer?.record("tool.http.request", {
+    source: "geocode_city",
+    method: "GET",
+    url,
+  });
+
+  const response = await fetch(url, {
     headers: {
       // Nominatim requires a descriptive user-agent.
       "User-Agent": "ai-devs-4-findhim-workflow/1.0",
@@ -67,6 +78,15 @@ const geocodeCityInPoland = async (city) => {
   });
 
   const payload = await readJsonResponse(response, `Geocoding city ${city}`);
+  tracer?.record("tool.http.response", {
+    source: "geocode_city",
+    method: "GET",
+    url,
+    status: response.status,
+    ok: response.ok,
+    body: payload,
+  });
+
   if (!Array.isArray(payload) || payload.length === 0) {
     throw new Error(`Cannot geocode city: ${city}`);
   }
@@ -126,7 +146,14 @@ const normalizeAccessLevelResponse = (payload) => {
   return value;
 };
 
-const postHubApi = async (url, body) => {
+const postHubApi = async (url, body, tracer, source) => {
+  tracer?.record("tool.http.request", {
+    source,
+    method: "POST",
+    url,
+    body,
+  });
+
   const response = await fetch(url, {
     method: "POST",
     headers: {
@@ -136,6 +163,15 @@ const postHubApi = async (url, body) => {
   });
 
   const data = await readJsonResponse(response, `Hub endpoint ${url}`);
+  tracer?.record("tool.http.response", {
+    source,
+    method: "POST",
+    url,
+    status: response.status,
+    ok: response.ok,
+    body: data,
+  });
+
   if (!response.ok) {
     const message = data?.message ?? data?.error?.message ?? `Hub request failed (${response.status})`;
     throw new Error(message);
@@ -144,9 +180,24 @@ const postHubApi = async (url, body) => {
   return data;
 };
 
-const fetchPowerPlants = async (apiKey) => {
-  const response = await fetch(`${DATA_BASE_URL}/${apiKey}/findhim_locations.json`);
+const fetchPowerPlants = async (apiKey, tracer) => {
+  const url = `${DATA_BASE_URL}/${apiKey}/findhim_locations.json`;
+  tracer?.record("tool.http.request", {
+    source: "load_power_plants",
+    method: "GET",
+    url,
+  });
+
+  const response = await fetch(url);
   const data = await readJsonResponse(response, "Power plants dataset");
+  tracer?.record("tool.http.response", {
+    source: "load_power_plants",
+    method: "GET",
+    url,
+    status: response.status,
+    ok: response.ok,
+    body: data,
+  });
 
   if (!response.ok) {
     const message = data?.message ?? `Power plants request failed (${response.status})`;
@@ -158,6 +209,10 @@ const fetchPowerPlants = async (apiKey) => {
     `${JSON.stringify(data, null, 2)}\n`,
     "utf-8",
   );
+  tracer?.record("file.write", {
+    source: "load_power_plants",
+    path: FINDHIM_LOCATIONS_PATH,
+  });
 
   if (Array.isArray(data)) {
     return data.map((item) => ({
@@ -175,7 +230,7 @@ const fetchPowerPlants = async (apiKey) => {
 
   const plants = [];
   for (const [city, details] of Object.entries(powerPlantsByCity)) {
-    const point = await geocodeCityInPoland(city);
+    const point = await geocodeCityInPoland(city, tracer);
     plants.push({
       code: String(details?.code ?? "").trim(),
       name: city,
@@ -191,7 +246,7 @@ const fetchPowerPlants = async (apiKey) => {
   return plants.filter((item) => item.code);
 };
 
-export const createHandlers = ({ apiKey, state }) => {
+export const createHandlers = ({ apiKey, state, tracer }) => {
   if (typeof apiKey !== "string" || !apiKey.trim()) {
     throw new Error("apiKey must be provided for findhim workflow.");
   }
@@ -207,7 +262,7 @@ export const createHandlers = ({ apiKey, state }) => {
     },
 
     async load_power_plants() {
-      const plants = await fetchPowerPlants(apiKey);
+      const plants = await fetchPowerPlants(apiKey, tracer);
       state.plants = plants;
       return {
         plants,
@@ -222,11 +277,21 @@ export const createHandlers = ({ apiKey, state }) => {
         surname,
       };
 
-      const locationsPayload = await postHubApi(LOCATION_ENDPOINT, payload);
-      const accessPayload = await postHubApi(ACCESS_LEVEL_ENDPOINT, {
-        ...payload,
-        birthYear,
-      });
+      const locationsPayload = await postHubApi(
+        LOCATION_ENDPOINT,
+        payload,
+        tracer,
+        "fetch_person_context.location",
+      );
+      const accessPayload = await postHubApi(
+        ACCESS_LEVEL_ENDPOINT,
+        {
+          ...payload,
+          birthYear,
+        },
+        tracer,
+        "fetch_person_context.accesslevel",
+      );
 
       const entry = {
         name,
@@ -260,6 +325,10 @@ export const createHandlers = ({ apiKey, state }) => {
       });
 
       await saveReportToFile(report);
+      tracer?.record("file.write", {
+        source: "build_report",
+        path: getDefaultReportPath(),
+      });
       state.report = report;
 
       return report;

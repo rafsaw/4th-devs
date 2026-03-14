@@ -103,7 +103,7 @@ const getFinalText = (response) =>
   ?? response.output?.find((item) => item.type === "message")?.content?.[0]?.text
   ?? "";
 
-const requestResponse = async ({ conversation, instructions }) => {
+const requestResponse = async ({ conversation, instructions, tracer, stepIndex }) => {
   debugLog("request.model", MODEL);
   debugLog("request.conversationItems", conversation.length);
 
@@ -112,6 +112,11 @@ const requestResponse = async ({ conversation, instructions }) => {
     input: conversation,
     tools,
     instructions,
+  });
+  tracer?.record("llm.request", {
+    stepIndex,
+    endpoint: RESPONSES_API_ENDPOINT,
+    body,
   });
 
   const response = await fetch(RESPONSES_API_ENDPOINT, {
@@ -125,6 +130,14 @@ const requestResponse = async ({ conversation, instructions }) => {
   });
 
   const data = await readJsonResponse(response, "Responses API");
+  tracer?.record("llm.response", {
+    stepIndex,
+    endpoint: RESPONSES_API_ENDPOINT,
+    status: response.status,
+    ok: response.ok,
+    body: data,
+  });
+
   if (!response.ok) {
     const message = data?.error?.message ?? `Responses API request failed (${response.status})`;
     throw new Error(message);
@@ -134,19 +147,32 @@ const requestResponse = async ({ conversation, instructions }) => {
   return data;
 };
 
-const executeToolCall = async (toolCall, handlers, stepIndex) => {
+const executeToolCall = async (toolCall, handlers, stepIndex, tracer) => {
   const handler = handlers[toolCall.name];
   if (!handler) {
     throw new Error(`Unknown tool call: ${toolCall.name}`);
   }
 
   const args = JSON.parse(toolCall.arguments || "{}");
+  tracer?.record("tool.call.request", {
+    stepIndex,
+    toolName: toolCall.name,
+    callId: toolCall.call_id,
+    args,
+  });
+
   debugLog(`step.${stepIndex}.tool_call.${toolCall.name}.args`, args);
   const result = await handler(args);
   debugLog(
     `step.${stepIndex}.tool_call.${toolCall.name}.result`,
     summarizeToolResult(toolCall.name, result),
   );
+  tracer?.record("tool.call.response", {
+    stepIndex,
+    toolName: toolCall.name,
+    callId: toolCall.call_id,
+    result,
+  });
 
   return {
     type: "function_call_output",
@@ -155,11 +181,11 @@ const executeToolCall = async (toolCall, handlers, stepIndex) => {
   };
 };
 
-const buildNextConversation = async (conversation, toolCalls, handlers, stepIndex) => {
+const buildNextConversation = async (conversation, toolCalls, handlers, stepIndex, tracer) => {
   const outputs = [];
 
   for (const toolCall of toolCalls) {
-    const output = await executeToolCall(toolCall, handlers, stepIndex);
+    const output = await executeToolCall(toolCall, handlers, stepIndex, tracer);
     outputs.push(output);
   }
 
@@ -184,9 +210,9 @@ export const createWorkflowState = () => ({
   report: null,
 });
 
-export const runWorkflow = async ({ apiKey, instructions = defaultInstructions } = {}) => {
+export const runWorkflow = async ({ apiKey, instructions = defaultInstructions, tracer } = {}) => {
   const state = createWorkflowState();
-  const handlers = createHandlers({ apiKey, state });
+  const handlers = createHandlers({ apiKey, state, tracer });
 
   let conversation = [
     {
@@ -200,21 +226,43 @@ export const runWorkflow = async ({ apiKey, instructions = defaultInstructions }
 
   while (stepsRemaining > 0) {
     const stepIndex = MAX_TOOL_STEPS - stepsRemaining + 1;
-    debugLog("step.start", { stepIndex, stepsRemaining });
+    debugLog("workflow.step.start", { stepIndex, stepsRemaining });
+    tracer?.record("workflow.step.start", {
+      stepIndex,
+      stepsRemaining,
+      conversationItems: conversation.length,
+    });
 
     stepsRemaining -= 1;
-    const response = await requestResponse({ conversation, instructions });
+    const response = await requestResponse({ conversation, instructions, tracer, stepIndex });
     const toolCalls = getToolCalls(response);
-    debugLog(`step.${stepIndex}.tool_calls`, toolCalls.map((call) => call.name));
+    debugLog(`workflow.step.${stepIndex}.tool_calls`, toolCalls.map((call) => call.name));
+    tracer?.record("workflow.step.tool_calls", {
+      stepIndex,
+      toolCalls: toolCalls.map((call) => ({
+        name: call.name,
+        callId: call.call_id,
+      })),
+    });
 
     if (toolCalls.length === 0) {
       finalText = getFinalText(response);
-       debugLog(`step.${stepIndex}.final_text`, finalText);
+      debugLog(`workflow.step.${stepIndex}.final_text`, finalText);
+      tracer?.record("workflow.step.final_text", {
+        stepIndex,
+        finalText,
+      });
       break;
     }
-
-    conversation = await buildNextConversation(conversation, toolCalls, handlers, stepIndex);
-    debugLog(`step.${stepIndex}.conversationItemsAfter`, conversation.length);
+    /*
+     RS> executeToolCall is inside buildNextConversation
+    */
+    conversation = await buildNextConversation(conversation, toolCalls, handlers, stepIndex, tracer);
+    debugLog(`workflow.step.${stepIndex}.conversationItemsAfter`, conversation.length);
+    tracer?.record("workflow.step.end", {
+      stepIndex,
+      conversationItems: conversation.length,
+    });
   }
 
   if (!state.report) {
