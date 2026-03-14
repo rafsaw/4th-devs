@@ -11,6 +11,36 @@ import { tools } from "./tools.js";
 const MODEL = resolveModelForProvider("gpt-4.1-mini");
 const MAX_TOOL_STEPS = 15;
 
+const previewText = (value, maxLength = 220) => {
+  const text = String(value ?? "").replace(/\s+/g, " ").trim();
+  return text.length > maxLength ? `${text.slice(0, maxLength)}...` : text;
+};
+
+const readJsonResponse = async (response, contextLabel) => {
+  const rawText = await response.text();
+  const contentType = (response.headers.get("content-type") || "").toLowerCase();
+
+  if (!rawText.trim()) {
+    throw new Error(`${contextLabel}: empty response body (status ${response.status}).`);
+  }
+
+  if (!contentType.includes("application/json")) {
+    throw new Error(
+      `${contextLabel}: expected JSON but got "${contentType || "unknown"}" `
+      + `(status ${response.status}). Body preview: ${previewText(rawText)}`,
+    );
+  }
+
+  try {
+    return JSON.parse(rawText);
+  } catch {
+    throw new Error(
+      `${contextLabel}: invalid JSON payload (status ${response.status}). `
+      + `Body preview: ${previewText(rawText)}`,
+    );
+  }
+};
+
 const getToolCalls = (response) =>
   response.output?.filter((item) => item.type === "function_call") ?? [];
 
@@ -37,7 +67,7 @@ const requestResponse = async ({ conversation, instructions }) => {
     body: JSON.stringify(body),
   });
 
-  const data = await response.json();
+  const data = await readJsonResponse(response, "Responses API");
   if (!response.ok) {
     const message = data?.error?.message ?? `Responses API request failed (${response.status})`;
     throw new Error(message);

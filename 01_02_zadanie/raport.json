@@ -1,0 +1,551 @@
+{
+  "generatedAt": "2026-03-14T17:11:34.167Z",
+  "summary": {
+    "suspectsCount": 5,
+    "observationsCount": 5,
+    "powerPlantCount": 7
+  },
+  "candidates": [
+    {
+      "name": "Cezary",
+      "surname": "Żurek",
+      "birthYear": 1987,
+      "accessLevel": 1,
+      "checkedLocations": 7,
+      "bestHit": {
+        "powerPlant": "PWR3847PL",
+        "distanceKm": 0.862,
+        "location": {
+          "lat": 50.3015,
+          "lon": 18.7912
+        }
+      },
+      "matches": [
+        {
+          "powerPlant": "PWR3847PL",
+          "distanceKm": 150.929,
+          "location": {
+            "lat": 51.115,
+            "lon": 17.062
+          }
+        },
+        {
+          "powerPlant": "PWR3847PL",
+          "distanceKm": 0.862,
+          "location": {
+            "lat": 50.3015,
+            "lon": 18.7912
+          }
+        },
+        {
+          "powerPlant": "PWR3847PL",
+          "distanceKm": 8.995,
+          "location": {
+            "lat": 50.2972,
+            "lon": 18.661
+          }
+        },
+        {
+          "powerPlant": "PWR5921PL",
+          "distanceKm": 132.422,
+          "location": {
+            "lat": 51.651,
+            "lon": 17.822
+          }
+        },
+        {
+          "powerPlant": "PWR3847PL",
+          "distanceKm": 71.741,
+          "location": {
+            "lat": 50.662,
+            "lon": 17.938
+          }
+        },
+        {
+          "powerPlant": "PWR5921PL",
+          "distanceKm": 43.323,
+          "location": {
+            "lat": 51.776,
+            "lon": 19.489
+          }
+        },
+        {
+          "powerPlant": "PWR3847PL",
+          "distanceKm": 17.29,
+          "location": {
+            "lat": 50.2512,
+            "lon": 19.0125
+          }
+        }
+      ]
+    },
+    {
+      "name": "Jacek",
+      "surname": "Nowak",
+      "birthYear": 1991,
+      "accessLevel": 1,
+      "checkedLocations": 12,
+      "bestHit": {
+        "powerPlant": "PWR3847PL",
+        "distanceKm": 9.693,
+        "location": {
+          "lat": 50.355,
+          "lon": 18.902
+        }
+      },
+      "matches": [
+        {
+          "powerPlant": "PWR3847PL",
+          "distanceKm": 17.461,
+          "location": {
+            "lat": 50.258,
+            "lon": 19.019
+          }
+        },
+        {
+          "powerPlant": "PWR3847PL",
+          "distanceKm": 9.693,
+          "location": {
+            "lat": 50.355,
+            "lon": 18.902
+          }
+        },
+        {
+          "powerPlant": "PWR6132PL",
+          "distanceKm": 76.73,
+          "location": {
+            "lat": 49.975,
+            "lon": 20.592
+          }
+        },
+        {
+          "powerPlant": "PWR3847PL",
+          "distanceKm": 29.451,
+          "location": {
+            "lat": 50.315,
+            "lon": 19.201
+          }
+        },
+        {
+          "powerPlant": "PWR3847PL",
+          "distanceKm": 23.666,
+          "location": {
+            "lat": 50.132,
+            "lon": 18.972
+          }
+        },
+        {
+          "powerPlant": "PWR6132PL",
+          "distanceKm": 70.369,
+          "location": {
+            "lat": 49.961,
+            "lon": 20.421
+          }
+        },
+        {
+          "powerPlant": "PWR6132PL",
+          "distanceKm": 55.841,
+          "location": {
+            "lat": 49.982,
+            "lon": 19.815
+          }
+        },
+        {
+          "powerPlant": "PWR3847PL",
+          "distanceKm": 42.859,
+          "location": {
+            "lat": 50.042,
+            "lon": 19.221
+          }
+        },
+        {
+          "powerPlant": "PWR6132PL",
+          "distanceKm": 56.257,
+          "location": {
+            "lat": 49.991,
+            "lon": 20.045
+          }
+        },
+        {
+          "powerPlant": "PWR3847PL",
+          "distanceKm": 27.347,
+          "location": {
+            "lat": 50.232,
+            "lon": 19.152
+          }
+        },
+        {
+          "powerPlant": "PWR6132PL",
+          "distanceKm": 95.34,
+          "location": {
+            "lat": 50.002,
+            "lon": 20.972
+          }
+        },
+        {
+          "powerPlant": "PWR3847PL",
+          "distanceKm": 16.589,
+          "location": {
+            "lat": 50.452,
+            "lon": 18.851
+          }
+        }
+      ]
+    },
+    {
+      "name": "Oskar",
+      "surname": "Sieradzki",
+      "birthYear": 1993,
+      "accessLevel": 7,
+      "checkedLocations": 17,
+      "bestHit": {
+        "powerPlant": "PWR1593PL",
+        "distanceKm": 7.828,
+        "location": {
+          "lat": 54.085,
+          "lon": 18.92
+        }
+      },
+      "matches": [
+        {
+          "powerPlant": "PWR1593PL",
+          "distanceKm": 31.189,
+          "location": {
+            "lat": 54.345,
+            "lon": 18.612
+          }
+        },
+        {
+          "powerPlant": "PWR2758PL",
+          "distanceKm": 249.508,
+          "location": {
+            "lat": 53.972,
+            "lon": 14.785
+          }
+        },
+        {
+          "powerPlant": "PWR1593PL",
+          "distanceKm": 170.81,
+          "location": {
+            "lat": 54.205,
+            "lon": 16.185
+          }
+        },
+        {
+          "powerPlant": "PWR2758PL",
+          "distanceKm": 243.884,
+          "location": {
+            "lat": 54.068,
+            "lon": 14.922
+          }
+        },
+        {
+          "powerPlant": "PWR2758PL",
+          "distanceKm": 220.917,
+          "location": {
+            "lat": 53.665,
+            "lon": 15.125
+          }
+        },
+        {
+          "powerPlant": "PWR2758PL",
+          "distanceKm": 122.065,
+          "location": {
+            "lat": 53.715,
+            "lon": 16.682
+          }
+        },
+        {
+          "powerPlant": "PWR2758PL",
+          "distanceKm": 208.019,
+          "location": {
+            "lat": 54.182,
+            "lon": 15.589
+          }
+        },
+        {
+          "powerPlant": "PWR1593PL",
+          "distanceKm": 7.828,
+          "location": {
+            "lat": 54.085,
+            "lon": 18.92
+          }
+        },
+        {
+          "powerPlant": "PWR1593PL",
+          "distanceKm": 51.685,
+          "location": {
+            "lat": 54.521,
+            "lon": 18.515
+          }
+        },
+        {
+          "powerPlant": "PWR2758PL",
+          "distanceKm": 254.667,
+          "location": {
+            "lat": 54.032,
+            "lon": 14.731
+          }
+        },
+        {
+          "powerPlant": "PWR1593PL",
+          "distanceKm": 82.973,
+          "location": {
+            "lat": 54.795,
+            "lon": 18.395
+          }
+        },
+        {
+          "powerPlant": "PWR2758PL",
+          "distanceKm": 223.001,
+          "location": {
+            "lat": 54.055,
+            "lon": 15.252
+          }
+        },
+        {
+          "powerPlant": "PWR2758PL",
+          "distanceKm": 70.069,
+          "location": {
+            "lat": 53.702,
+            "lon": 17.545
+          }
+        },
+        {
+          "powerPlant": "PWR2758PL",
+          "distanceKm": 238.229,
+          "location": {
+            "lat": 53.555,
+            "lon": 14.842
+          }
+        },
+        {
+          "powerPlant": "PWR2758PL",
+          "distanceKm": 234.273,
+          "location": {
+            "lat": 53.815,
+            "lon": 14.962
+          }
+        },
+        {
+          "powerPlant": "PWR1593PL",
+          "distanceKm": 23.86,
+          "location": {
+            "lat": 53.955,
+            "lon": 18.512
+          }
+        },
+        {
+          "powerPlant": "PWR2758PL",
+          "distanceKm": 257.999,
+          "location": {
+            "lat": 53.442,
+            "lon": 14.535
+          }
+        }
+      ]
+    },
+    {
+      "name": "Wojciech",
+      "surname": "Bielik",
+      "birthYear": 1986,
+      "accessLevel": 7,
+      "checkedLocations": 8,
+      "bestHit": {
+        "powerPlant": "PWR2758PL",
+        "distanceKm": 0.843,
+        "location": {
+          "lat": 53.355,
+          "lon": 18.415
+        }
+      },
+      "matches": [
+        {
+          "powerPlant": "PWR2758PL",
+          "distanceKm": 0.843,
+          "location": {
+            "lat": 53.355,
+            "lon": 18.415
+          }
+        },
+        {
+          "powerPlant": "PWR2758PL",
+          "distanceKm": 267.271,
+          "location": {
+            "lat": 52.592,
+            "lon": 14.635
+          }
+        },
+        {
+          "powerPlant": "PWR2758PL",
+          "distanceKm": 37.682,
+          "location": {
+            "lat": 53.135,
+            "lon": 17.985
+          }
+        },
+        {
+          "powerPlant": "PWR3847PL",
+          "distanceKm": 710.536,
+          "location": {
+            "lat": 50.448,
+            "lon": 8.761
+          }
+        },
+        {
+          "powerPlant": "PWR2758PL",
+          "distanceKm": 114.039,
+          "location": {
+            "lat": 53.142,
+            "lon": 16.745
+          }
+        },
+        {
+          "powerPlant": "PWR2758PL",
+          "distanceKm": 132.117,
+          "location": {
+            "lat": 52.652,
+            "lon": 16.825
+          }
+        },
+        {
+          "powerPlant": "PWR2758PL",
+          "distanceKm": 346.594,
+          "location": {
+            "lat": 52.505,
+            "lon": 13.445
+          }
+        },
+        {
+          "powerPlant": "PWR2758PL",
+          "distanceKm": 225.035,
+          "location": {
+            "lat": 52.742,
+            "lon": 15.212
+          }
+        }
+      ]
+    },
+    {
+      "name": "Wacław",
+      "surname": "Jasiński",
+      "birthYear": 1986,
+      "accessLevel": 2,
+      "checkedLocations": 12,
+      "bestHit": {
+        "powerPlant": "PWR8406PL",
+        "distanceKm": 13.627,
+        "location": {
+          "lat": 51.412,
+          "lon": 21.35
+        }
+      },
+      "matches": [
+        {
+          "powerPlant": "PWR8406PL",
+          "distanceKm": 13.627,
+          "location": {
+            "lat": 51.412,
+            "lon": 21.35
+          }
+        },
+        {
+          "powerPlant": "PWR6132PL",
+          "distanceKm": 50.765,
+          "location": {
+            "lat": 50.258,
+            "lon": 20.485
+          }
+        },
+        {
+          "powerPlant": "PWR8406PL",
+          "distanceKm": 207.22,
+          "location": {
+            "lat": 53.185,
+            "lon": 22.042
+          }
+        },
+        {
+          "powerPlant": "PWR6132PL",
+          "distanceKm": 61.037,
+          "location": {
+            "lat": 50.478,
+            "lon": 20.725
+          }
+        },
+        {
+          "powerPlant": "PWR8406PL",
+          "distanceKm": 98.483,
+          "location": {
+            "lat": 51.252,
+            "lon": 22.551
+          }
+        },
+        {
+          "powerPlant": "PWR8406PL",
+          "distanceKm": 188.629,
+          "location": {
+            "lat": 53.078,
+            "lon": 21.585
+          }
+        },
+        {
+          "powerPlant": "PWR8406PL",
+          "distanceKm": 90.976,
+          "location": {
+            "lat": 52.215,
+            "lon": 21.002
+          }
+        },
+        {
+          "powerPlant": "PWR8406PL",
+          "distanceKm": 91.445,
+          "location": {
+            "lat": 52.185,
+            "lon": 21.562
+          }
+        },
+        {
+          "powerPlant": "PWR8406PL",
+          "distanceKm": 134.853,
+          "location": {
+            "lat": 52.602,
+            "lon": 21.442
+          }
+        },
+        {
+          "powerPlant": "PWR6132PL",
+          "distanceKm": 68.46,
+          "location": {
+            "lat": 50.875,
+            "lon": 20.612
+          }
+        },
+        {
+          "powerPlant": "PWR8406PL",
+          "distanceKm": 234.611,
+          "location": {
+            "lat": 53.125,
+            "lon": 23.145
+          }
+        },
+        {
+          "powerPlant": "PWR6132PL",
+          "distanceKm": 43.168,
+          "location": {
+            "lat": 50.198,
+            "lon": 20.275
+          }
+        }
+      ]
+    }
+  ],
+  "winner": {
+    "name": "Wojciech",
+    "surname": "Bielik",
+    "accessLevel": 7,
+    "powerPlant": "PWR2758PL",
+    "distanceKm": 0.843,
+    "birthYear": 1986
+  }
+}

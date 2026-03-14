@@ -7,16 +7,11 @@ import {
 } from "./verify.js";
 
 const resolveAiDevsApiKey = () => {
-  const key = (
-    process.env.AI_DEVS_4_API_KEY
-    ?? process.env.AI_DEVS_4_KEY
-    ?? process.env.AIDEVS_API_KEY
-    ?? ""
-  ).trim();
+  const key = (process.env.AI_DEVS_4_KEY ?? "").trim();
 
   if (!key) {
     throw new Error(
-      "Missing AI Devs API key. Set AI_DEVS_4_API_KEY (or AI_DEVS_4_KEY) in your environment.",
+      "Missing AI Devs key. Set AI_DEVS_4_KEY in your environment.",
     );
   }
 
