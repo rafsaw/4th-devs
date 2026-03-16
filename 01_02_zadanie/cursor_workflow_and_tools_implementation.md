@@ -786,6 +786,11 @@ create mermaid diagram to visual
 Jasne — poniżej masz gotowy diagram Mermaid pokazujący Twój workflow `findhim` z pętlą agentową i krokiem deterministycznym.
 
 ```mermaid
+%%{init: {'theme':'base', 'themeVariables': {
+  'background': '#ffffff',
+  'primaryTextColor': '#000000',
+  'lineColor': '#000000'
+}}}%%
 flowchart TD
   start[Start main.js] --> loadKeys[Load env keys]
   loadKeys --> runWorkflow[runWorkflow]
@@ -838,6 +843,11 @@ tak sequence diagram
 Świetnie — poniżej sequence diagram pod Twoją implementację `findhim`:
 
 ```mermaid
+%%{init: {'theme':'base', 'themeVariables': { 
+  'background': '#ffffff',
+  'primaryTextColor': '#000000',
+  'lineColor': '#000000'
+}}}%%
 sequenceDiagram
   participant User
   participant Main as main.js
