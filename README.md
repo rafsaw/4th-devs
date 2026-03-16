@@ -162,58 +162,12 @@ npm run lesson6:install
 
 | Example | Run | Description |
 |---------|-----|-------------|
-| `02_02_chunking` | `npm run lesson7:chunking` | Text chunking strategies (characters, separators, context-enriched, topics) |
-| `02_02_embedding` | `npm run lesson7:embedding` | Interactive embedding demo with pairwise similarity matrix |
-| `02_02_hybrid_rag` | `npm run lesson7:hybrid_rag` | Hybrid RAG with SQLite FTS5 + vector search |
+| `02_02_chunking` | `npm run lesson7:chunking` | Four text chunking strategies compared side-by-side |
+| `02_02_embedding` | `npm run lesson7:embedding` | Interactive embedding demo with a pairwise similarity matrix |
+| `02_02_hybrid_rag` | `npm run lesson7:hybrid_rag` | Hybrid RAG agent with SQLite FTS5 full-text search and sqlite-vec vector similarity |
 
 Install dependencies:
 
 ```bash
 npm run lesson7:install
-```
-
-## Lesson 08
-
-| Example | Run | Description |
-|---------|-----|-------------|
-| `02_03_graph_agents` | `npm run lesson8:graph_agents` | Graph RAG agent with Neo4j knowledge graph (hybrid search + entity exploration) |
-
-Install dependencies:
-
-```bash
-npm run lesson8:install
-```
-
-`02_03_graph_agents` requires a running **Neo4j 5.11+** instance (for vector index support). Quickest via Docker:
-
-```bash
-docker run -d --name neo4j -p 7474:7474 -p 7687:7687 -e NEO4J_AUTH=neo4j/password neo4j:5
-```
-
-Add Neo4j credentials to `02_03_graph_agents/.env`.
-
-## Lesson 09
-
-| Example | Run | Description |
-|---------|-----|-------------|
-| `02_04_ops` | `npm run lesson9:ops` | Multi-agent daily ops generator with task delegation |
-
-Install dependencies:
-
-```bash
-npm run lesson9:install
-```
-
-## Lesson 10
-
-| Example | Run | Description |
-|---------|-----|-------------|
-| `02_05_agent` | `npm run lesson10:agent` | Context engineering agent with observational memory |
-| `02_05_agent` (demo) | `npm run lesson10:agent:demo` | Scripted demo — run while `lesson10:agent` server is up |
-| `02_05_sandbox` | `npm run lesson10:sandbox` | MCP sandbox agent with QuickJS code execution |
-
-Install dependencies:
-
-```bash
-npm run lesson10:install
 ```
