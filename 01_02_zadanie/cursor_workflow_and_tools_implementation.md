@@ -847,56 +847,54 @@ sequenceDiagram
   participant Hub as HubAPI
   participant FS as Filesystem
 
-  User->>Main: npm run lesson2:findhim
+  User->>Main: npm run lesson2 findhim
   Main->>Main: resolve AI_DEVS_4_KEY
   Main->>Workflow: runWorkflow(apiKey)
 
-  Workflow->>Workflow: init state + conversation
-  loop AgentLoop until no tool_calls or max steps
+  Workflow->>Workflow: init state and conversation
+  loop Agent loop until no tool calls or max steps
     Workflow->>Model: requestResponse(conversation, tools, instructions)
-    Model-->>Workflow: response.output
+    Model-->>Workflow: response output
 
-    alt response contains tool_calls
+    alt response contains tool calls
       Workflow->>Workflow: getToolCalls(response)
-      loop for each tool_call
+      loop for each tool call
         Workflow->>Handlers: executeToolCall(name, args)
 
         alt load_suspects
           Handlers->>FS: read transport_people.json
-          FS-->>Handlers: suspects[]
-          Handlers-->>Workflow: result(count, suspects)
+          FS-->>Handlers: suspects list
+          Handlers-->>Workflow: result with count and suspects
         else load_power_plants
-          Handlers->>Hub: GET /data/{key}/findhim_locations.json
-          Hub-->>Handlers: power_plants JSON
-          Handlers->>FS: write 01_02_zadanie/findhim_locations.json
-          Handlers-->>Workflow: result(count, plants)
+          Handlers->>Hub: get findhim_locations.json
+          Hub-->>Handlers: power plants json
+          Handlers->>FS: write findhim_locations.json
+          Handlers-->>Workflow: result with count and plants
         else fetch_person_context
-          Handlers->>Hub: POST /api/location (name, surname)
-          Hub-->>Handlers: locations[]
-          Handlers->>Hub: POST /api/accesslevel (name, surname, birthYear)
-          Hub-->>Handlers: accessLevel
-          Handlers-->>Workflow: result(entry with apiLocations + normalized locations)
+          Handlers->>Hub: post location request
+          Hub-->>Handlers: locations list
+          Handlers->>Hub: post access level request
+          Hub-->>Handlers: access level
+          Handlers-->>Workflow: result with normalized person context
         else build_report
-          Handlers->>FS: write 01_02_zadanie/raport.json
+          Handlers->>FS: write raport.json
           Handlers-->>Workflow: report with winner
         end
 
-        Workflow->>Workflow: build function_call_output(call_id, output)
+        Workflow->>Workflow: build function call output
       end
-      Workflow->>Workflow: append tool_calls + function_call_output to conversation
-    else no tool_calls
-      Workflow->>Workflow: getFinalText(response)
-      break
+      Workflow->>Workflow: append tool calls and outputs to conversation
+    else no tool calls
+      Workflow->>Workflow: get final text
     end
   end
 
-  Workflow-->>Main: { state.report, finalText }
-
-  Main->>Main: prepareVerifyPayload(report.winner)
-  Main->>Hub: POST /verify (task=findhim, answer)
+  Workflow-->>Main: return report and final text
+  Main->>Main: prepare verify payload
+  Main->>Hub: post verify request
   Hub-->>Main: flag response
-  Main->>FS: write 01_02_zadanie/wynik.md
-  Main-->>User: winner + verify result
+  Main->>FS: write wynik.md
+  Main-->>User: winner and verify result
 ```
 
 Jeśli chcesz, mogę też przygotować wersję **“teaching diagram”** (krótszą), tylko z 4 lifeline’ami: `Workflow`, `Model`, `Tools`, `Hub`.
