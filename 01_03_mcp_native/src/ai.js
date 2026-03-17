@@ -26,10 +26,15 @@ const extractResponseText = (data) => {
  * Sends a chat request to the Responses API.
  * Returns the raw response (caller extracts tool calls or text).
  */
-export const chat = async ({ model, input, tools, toolChoice = "auto", instructions }) => {
+export const chat = async ({ model, input, tools, toolChoice = "auto", instructions, tracer }) => {
   const body = { model, input };
   if (tools?.length) { body.tools = tools; body.tool_choice = toolChoice; }
   if (instructions) body.instructions = instructions;
+
+  tracer?.record("chat.request", {
+    endpoint: RESPONSES_API_ENDPOINT,
+    body,
+  });
 
   const response = await fetch(RESPONSES_API_ENDPOINT, {
     method: "POST",
@@ -42,6 +47,12 @@ export const chat = async ({ model, input, tools, toolChoice = "auto", instructi
   });
 
   const data = await response.json();
+
+  tracer?.record("chat.response", {
+    status: response.status,
+    ok: response.ok,
+    data,
+  });
 
   if (!response.ok || data.error) {
     throw new Error(data?.error?.message || `API request failed (${response.status})`);

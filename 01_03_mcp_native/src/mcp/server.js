@@ -10,11 +10,15 @@
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { z } from "zod";
 
-export const createMcpServer = () => {
+export const createMcpServer = ({ tracer } = {}) => {
   const server = new McpServer(
     { name: "demo-mcp-server", version: "1.0.0" },
     { capabilities: { tools: {} } }
   );
+  tracer?.record("mcp-server.startup", {
+    name: "demo-mcp-server",
+    version: "1.0.0",
+  });
 
   server.registerTool(
     "get_weather",
@@ -23,13 +27,25 @@ export const createMcpServer = () => {
       inputSchema: { city: z.string().describe("City name") }
     },
     async ({ city }) => {
+      tracer?.record("mcp-server.tool.handler.invoke", {
+        name: "get_weather",
+        args: { city },
+      });
+
       const conditions = ["sunny", "cloudy", "rainy", "snowy"];
       const condition = conditions[Math.floor(Math.random() * conditions.length)];
       const temp = Math.floor(Math.random() * 35) - 5;
 
-      return {
+      const response = {
         content: [{ type: "text", text: JSON.stringify({ city, condition, temperature: `${temp}°C` }) }]
       };
+
+      tracer?.record("mcp-server.tool.handler.result", {
+        name: "get_weather",
+        response,
+      });
+
+      return response;
     }
   );
 
@@ -40,16 +56,33 @@ export const createMcpServer = () => {
       inputSchema: { timezone: z.string().describe("Timezone (e.g., 'UTC', 'America/New_York')") }
     },
     async ({ timezone }) => {
+      tracer?.record("mcp-server.tool.handler.invoke", {
+        name: "get_time",
+        args: { timezone },
+      });
+
       try {
         const time = new Date().toLocaleString("en-US", { timeZone: timezone });
-        return {
+        const response = {
           content: [{ type: "text", text: JSON.stringify({ timezone, time }) }]
         };
+        tracer?.record("mcp-server.tool.handler.result", {
+          name: "get_time",
+          response,
+        });
+
+        return response;
       } catch {
-        return {
+        const errorResponse = {
           content: [{ type: "text", text: JSON.stringify({ error: `Invalid timezone: ${timezone}` }) }],
           isError: true
         };
+        tracer?.record("mcp-server.tool.handler.error", {
+          name: "get_time",
+          response: errorResponse,
+        });
+
+        return errorResponse;
       }
     }
   );

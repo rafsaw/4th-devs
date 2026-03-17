@@ -60,3 +60,4 @@ export const nativeHandlers = {
     return { result: text.toUpperCase() };
   }
 };
+

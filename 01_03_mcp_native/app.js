@@ -12,17 +12,26 @@ import { nativeTools, nativeHandlers } from "./src/native/tools.js";
 import { createAgent } from "./src/agent.js";
 import { MCP_LABEL, NATIVE_LABEL } from "./src/log.js";
 import { resolveModelForProvider } from "../config.js";
+import { createTraceRecorder } from "./src/trace.js";
 
-const model = resolveModelForProvider("gpt-5.2");
+const model = resolveModelForProvider("openai/gpt-4.1-mini");
 const instructions = `You are a helpful assistant with access to various tools.
 You can check weather, get time, perform calculations, and transform text.
 Use the appropriate tool for each task. Be concise.`;
 
 const main = async () => {
+  const tracer = createTraceRecorder();
+
   // Start in-memory MCP server and connect a client
-  const mcpServer = createMcpServer();
-  const mcpClient = await createMcpClient(mcpServer);
-  const mcpTools = await listMcpTools(mcpClient);
+  const mcpServer = createMcpServer({ tracer });
+  const mcpClient = await createMcpClient(mcpServer, { tracer });
+  const mcpTools = await listMcpTools(mcpClient, { tracer });
+
+  tracer.record("startup", {
+    model,
+    mcpTools: mcpTools.map((t) => t.name),
+    nativeTools: Object.keys(nativeHandlers),
+  });
 
   // Unified handler map — MCP and native tools behind the same { execute, label } interface
   const handlers = Object.fromEntries([
@@ -35,27 +44,44 @@ const main = async () => {
       label: NATIVE_LABEL
     }])
   ]);
+  tracer.record("Tools: Unified handler map", {
+    count: Object.keys(handlers).length,
+    tools: Object.keys(handlers),
+  });
 
   const tools = [...mcpToolsToOpenAI(mcpTools), ...nativeTools];
-  const agent = createAgent({ model, tools, instructions, handlers });
+  tracer.record("Tools: Combined and converted to OpenAI tools", {
+    count: tools.length,
+    tools: tools.map((t) => ({ name: t.name, description: t.description })),
+  });
+  const agent = createAgent({ model, tools, instructions, handlers, tracer });
+  tracer.record("Agent: Created", {});
+
 
   console.log(`MCP tools: ${mcpTools.map((t) => t.name).join(", ")}`);
   console.log(`Native tools: ${Object.keys(nativeHandlers).join(", ")}`);
 
   const queries = [
-    "What's the weather in Tokyo?",
-    "What time is it in Europe/London?",
-    "Calculate 42 multiplied by 17",
-    "Convert 'hello world' to uppercase",
-    "What's 25 + 17, and what's the weather in Paris?"
+     "What's the weather in Tokyo?"
+    //  "What time is it in Europe/London?"
+    // "Calculate 42 multiplied by 17",
+    // "Convert 'hello world' to uppercase"
+    // "What's 25 + 17, and what's the weather in Paris?"
   ];
 
   for (const query of queries) {
-    await agent.processQuery(query);
+    tracer.record("query.start", { query });
+
+    const answer = await agent.processQuery(query);
+    
+
+    tracer.record("query.end", { query, answer});
   }
 
   await mcpClient.close();
   await mcpServer.close();
+
+  await tracer.save();
 };
 
 main().catch(console.error);
