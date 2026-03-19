@@ -15,46 +15,46 @@ export const createMcpClient = async (server, { tracer } = {}) => {
     { name: "demo-mcp-client", version: "1.0.0" },
     { capabilities: {} }
   );
-  tracer?.record("mcp-client.startup", {
-    name: "demo-mcp-client",
-    version: "1.0.0",
-  });
+  // tracer?.record("mcp-client.startup", {
+  //   name: "demo-mcp-client",
+  //   version: "1.0.0",
+  // });
 
   const [clientTransport, serverTransport] = InMemoryTransport.createLinkedPair();
 
-  tracer?.record("mcp-client.transport.linked", {
-    clientTransportType: clientTransport.constructor?.name,
-    serverTransportType: serverTransport.constructor?.name,
-  });
+  // tracer?.record("mcp-client.transport.linked", {
+  //   clientTransportType: clientTransport.constructor?.name,
+  //   serverTransportType: serverTransport.constructor?.name,
+  // });
 
   await server.connect(serverTransport);
   await client.connect(clientTransport);
 
-  tracer?.record("mcp-client.client.connected", {
-    clientInfo: { name: "demo-mcp-client", version: "1.0.0" },
-    serverInfo: { name: "demo-mcp-server", version: "1.0.0" },
-  });
+  // tracer?.record("mcp-client.client.connected", {
+  //   clientInfo: { name: "demo-mcp-client", version: "1.0.0" },
+  //   serverInfo: { name: "demo-mcp-server", version: "1.0.0" },
+  // });
 
   return client;
 };
 
 export const listMcpTools = async (client, { tracer } = {}) => {
-  tracer?.record("mcp-client.tools.list.request");
+  // tracer?.record("mcp-client.tools.list.request");
 
   const { tools } = await client.listTools();
 
-  tracer?.record("mcp-client.tools.list.response", { tools });
+  // tracer?.record("mcp-client.tools.list.response", { tools });
 
   return tools;
 };
 
 // Calls an MCP tool and parses the text result
 export const callMcpTool = async (client, name, args, { tracer } = {}) => {
-  tracer?.record("mcp-client.tool.call.request", { name, arguments: args });
+  // tracer?.record("mcp-client.tool.call.request", { name, arguments: args });
 
   const result = await client.callTool({ name, arguments: args });
 
-  tracer?.record("mcp-client.tool.call.response", { name, rawResult: result });
+  // tracer?.record("mcp-client.tool.call.response", { name, rawResult: result });
 
   const textContent = result.content.find((c) => c.type === "text");
   return textContent ? JSON.parse(textContent.text) : result;
@@ -69,9 +69,9 @@ export const mcpToolsToOpenAI = (mcpTools, { tracer } = {}) => {
     parameters: tool.inputSchema,
     strict: true
   }));
-  tracer?.record("mcp-client.tools.converted.to_openai", {
-    count: openAITools.length,
-    tools: openAITools.map((t) => ({ name: t.name, description: t.description })),
-  });
+  // tracer?.record("mcp-client.tools.converted.to_openai", {
+  //   count: openAITools.length,
+  //   tools: openAITools.map((t) => ({ name: t.name, description: t.description })),
+  // });
   return openAITools;
 };

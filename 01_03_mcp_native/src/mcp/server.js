@@ -15,10 +15,10 @@ export const createMcpServer = ({ tracer } = {}) => {
     { name: "demo-mcp-server", version: "1.0.0" },
     { capabilities: { tools: {} } }
   );
-  tracer?.record("mcp-server.startup", {
-    name: "demo-mcp-server",
-    version: "1.0.0",
-  });
+  // tracer?.record("mcp-server.startup", {
+  //   name: "demo-mcp-server",
+  //   version: "1.0.0",
+  // });
 
   server.registerTool(
     "get_weather",

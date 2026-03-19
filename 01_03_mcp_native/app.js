@@ -27,11 +27,11 @@ const main = async () => {
   const mcpClient = await createMcpClient(mcpServer, { tracer });
   const mcpTools = await listMcpTools(mcpClient, { tracer });
 
-  tracer.record("startup", {
-    model,
-    mcpTools: mcpTools.map((t) => t.name),
-    nativeTools: Object.keys(nativeHandlers),
-  });
+  // tracer.record("startup", {
+  //   model,
+  //   mcpTools: mcpTools.map((t) => t.name),
+  //   nativeTools: Object.keys(nativeHandlers),
+  // });
 
   // Unified handler map — MCP and native tools behind the same { execute, label } interface
   const handlers = Object.fromEntries([
@@ -44,18 +44,19 @@ const main = async () => {
       label: NATIVE_LABEL
     }])
   ]);
-  tracer.record("Tools: Unified handler map", {
-    count: Object.keys(handlers).length,
-    tools: Object.keys(handlers),
-  });
+  // tracer.record("Tools: Unified handler map", {
+  //   count: Object.keys(handlers).length,
+  //   tools: Object.keys(handlers),
+  // });
 
   const tools = [...mcpToolsToOpenAI(mcpTools), ...nativeTools];
-  tracer.record("Tools: Combined and converted to OpenAI tools", {
-    count: tools.length,
-    tools: tools.map((t) => ({ name: t.name, description: t.description })),
-  });
+  // tracer.record("Tools: Combined and converted to OpenAI tools", {
+  //   count: tools.length,
+  //   tools: tools.map((t) => ({ name: t.name, description: t.description })),
+  // });
   const agent = createAgent({ model, tools, instructions, handlers, tracer });
-  tracer.record("Agent: Created", {});
+ 
+  // tracer.record("Agent: Created", {});
 
 
   console.log(`MCP tools: ${mcpTools.map((t) => t.name).join(", ")}`);
@@ -70,12 +71,12 @@ const main = async () => {
   ];
 
   for (const query of queries) {
-    tracer.record("query.start", { query });
+    tracer.record("app.query.start", { query });
 
     const answer = await agent.processQuery(query);
     
 
-    tracer.record("query.end", { query, answer});
+    tracer.record("app.query.end", { query, answer});
   }
 
   await mcpClient.close();
