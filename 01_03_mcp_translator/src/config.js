@@ -1,7 +1,10 @@
 import { resolveModelForProvider } from "../../config.js";
-
+/**
+ * API Configuration
+ * openai/gpt-4.1-mini or openai/gpt-5.2
+ */
 export const api = {
-  model: resolveModelForProvider("gpt-5.2"),
+  model: resolveModelForProvider("openai/gpt-4.1-mini"),
   maxOutputTokens: 16384,
   instructions: `You are a professional Polish-to-English translator with expertise in technical and educational content.
 
@@ -28,6 +31,7 @@ CRAFT
 Only say "Done: <filename>" after verification.`
 };
 
+/** Bind address for the Node HTTP server (`src/server.js`) — not MCP; MCP uses `mcp.json`. */
 export const server = {
   port: process.env.PORT || 3000,
   host: process.env.HOST || "localhost"

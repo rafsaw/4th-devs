@@ -1,0 +1,30 @@
+sequenceDiagram
+  autonumber
+  participant App as app.js
+  participant Agent as agent.js
+  participant AI as ai.js
+  participant API as LLM (Responses API)
+  participant H as handlers map
+  participant MC as mcp/client.js
+  participant SDKc as MCP SDK Client
+  participant MS as mcp/server.js
+
+  App->>Agent: processQuery("What's the weather in Tokyo?")
+  Agent->>AI: chat(input, tools, instructions)
+  AI->>API: POST /v1/responses
+  API-->>AI: output: [function_call get_weather]
+  AI-->>Agent: response
+  Agent->>H: execute(get_weather, args)
+  H->>MC: callMcpTool(client, "get_weather", args)
+  MC->>SDKc: callTool(...)
+  SDKc->>MS: MCP tools/call (in-memory)
+  MS->>MS: handler (e.g. random weather)
+  MS-->>SDKc: CallToolResult (text JSON)
+  SDKc-->>MC: result
+  MC-->>H: parsed object
+  H-->>Agent: function_call_output
+  Agent->>AI: chat(extended conversation)
+  AI->>API: POST /v1/responses
+  API-->>AI: final message text (no tool calls)
+  AI-->>Agent: response
+  Agent-->>App: answer string

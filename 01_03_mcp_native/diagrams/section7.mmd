@@ -1,0 +1,13 @@
+sequenceDiagram
+  autonumber
+  participant Agent as agent.js
+  participant AI as ai.js
+  participant API as LLM (Responses API)
+  participant Nat as native/tools.js
+
+  Agent->>AI: chat(...)
+  API-->>AI: function_call (e.g. calculate)
+  Agent->>Nat: nativeHandlers.calculate(args)
+  Nat-->>Agent: result object
+  Agent->>AI: chat(..., function_call_output)
+  API-->>AI: final text

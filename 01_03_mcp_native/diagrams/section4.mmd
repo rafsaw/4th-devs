@@ -1,0 +1,22 @@
+sequenceDiagram
+  autonumber
+  participant App as app.js
+  participant MS as mcp/server.js
+  participant MC as mcp/client.js
+  participant SDKc as MCP SDK Client
+  participant SDKs as MCP SDK Server
+
+  App->>MS: createMcpServer()
+  MS->>SDKs: new McpServer + registerTool(...)
+  App->>MC: createMcpClient(server)
+  MC->>SDKc: new Client()
+  MC->>MC: InMemoryTransport.createLinkedPair()
+  MC->>SDKs: server.connect(serverTransport)
+  MC->>SDKc: client.connect(clientTransport)
+  App->>MC: listMcpTools(client)
+  SDKc->>SDKs: MCP tools/list (in-memory)
+  SDKs-->>SDKc: tool catalog
+  SDKc-->>MC: { tools }
+  MC-->>App: mcpTools[]
+  App->>App: build handlers + tools[]
+  App->>App: createAgent(...)

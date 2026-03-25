@@ -1,8 +1,37 @@
 /**
- * HTTP server — exposes /api/chat and /api/translate endpoints.
+ * HTTP API server (not an MCP server)
  *
- * Both routes delegate to the same agent loop. The server is a thin
- * HTTP shell around the MCP-backed translation agent.
+ * What this file does
+ * -------------------
+ * This module is a thin **Node `http`** layer: JSON request bodies, CORS, routing, and JSON responses.
+ * It does **not** implement the Model Context Protocol. The MCP **server** is a separate child process
+ * spawned from `mcp.json` and connected in `src/mcp/client.js`; this file only **uses** the existing
+ * `Client` session passed in from `app.js`.
+ *
+ * - `POST /api/chat` — requires `{ "message": "..." }`; forwards the string to `run()` from `agent.js`.
+ * - `POST /api/translate` — requires `{ "text": "..." }`; wraps text in a fixed translation prompt, then `run()`.
+ * - HTTP `OPTIONS` — CORS preflight (204, any path).
+ * - Parses bodies with `parseBody` (full string in memory, then `JSON.parse`); responds with `sendJson`.
+ *
+ * `startHttpServer(config, getMcpContext)` binds `host`/`port` and returns the `http.Server` so `app.js`
+ * can `close()` it on shutdown. `getMcpContext()` is called per request to supply `{ mcpClient, mcpTools }`
+ * — the **same** objects created at startup, not a new MCP connection per HTTP request.
+ *
+ * Architecture (how this fits the app)
+ * ------------------------------------
+ * - **Composition**: `app.js` connects MCP once, starts the file-watching translation loop, then starts this server.
+ * - **Shared brain**: HTTP routes and the background loop both call `run(..., { mcpClient, mcpTools })`; file access
+ *   still goes through MCP tools inside the agent, not through ad hoc `fs` in this file.
+ * - **Role**: Adapter from browsers or `curl` to the agent; no duplicate business logic beyond prompt shaping on `/api/translate`.
+ *
+ * Production considerations
+ * -------------------------
+ * - **CORS** is wide open (`Access-Control-Allow-Origin: *`) — appropriate for local demos; lock down for public deployments.
+ * - **No auth or rate limits** — add reverse-proxy rules, API keys, or middleware if exposed beyond trusted networks.
+ * - **Body size**: the handler buffers the entire body into a string; consider a max size or streaming for untrusted clients.
+ * - **503** if `mcpClient` is missing (MCP never connected or session lost).
+ * - **Logged base URL**: when listening on `0.0.0.0` or `::`, the startup banner uses `localhost` in the example URL
+ *   so copy-paste works; clients on other machines must use the host’s real address.
  */
 
 import { createServer } from "http";
