@@ -5,6 +5,147 @@ Uses LLM + tool calling loop with a deterministic mission rule guard.
 
 ---
 
+## Full submission sequence (end-to-end)
+
+This is the exact order of steps every time you want to run the task:
+
+### Step 1 — start local server
+
+```bash
+cd 01_03_zadanie
+npm run dev
+```
+
+Verify it started:
+```
+[missionRules] loaded — 23 keywords active
+Proxy agent listening on http://localhost:3000
+```
+
+---
+
+### Step 2 — expose publicly via ngrok
+
+#### Install ngrok (first time only)
+
+Download from https://ngrok.com/download and unzip, then add to PATH.
+Or install via Chocolatey:
+```powershell
+choco install ngrok
+```
+
+#### Start ngrok
+
+Open a **new PowerShell terminal** (keep server terminal open):
+
+```powershell
+ngrok http 3000
+```
+
+Ngrok prints a dashboard like this:
+```
+Session Status    online
+Account           your@email.com
+Version           3.x.x
+Region            Europe (eu)
+Forwarding        https://69ec-98-213-244-242.ngrok-free.app -> http://localhost:3000
+```
+
+**Copy the `https://` Forwarding URL** — you need it in Step 3.
+
+#### Get the URL from command line (without reading the dashboard)
+
+If you want to grab the URL automatically:
+
+```powershell
+# Wait a moment for ngrok to start, then:
+(Invoke-RestMethod http://localhost:4040/api/tunnels).tunnels[0].public_url
+```
+
+This calls ngrok's local API (port 4040) and prints just the URL.
+
+> **Important:** free ngrok URL changes every time you restart ngrok.
+> Always copy the fresh URL and re-run Step 3 after each restart.
+
+---
+
+### Step 3 — register with Hub (trigger operator session)
+
+Send a POST to the verify endpoint. Replace `YOUR-NGROK-URL` with the URL from Step 2.
+
+```powershell
+$ngrokUrl = (Invoke-RestMethod http://localhost:4040/api/tunnels).tunnels[0].public_url
+
+Invoke-RestMethod -Uri https://hub.ag3nts.org/verify `
+  -Method POST -ContentType "application/json" `
+  -Body (@{
+    apikey  = "4999b7d1-5386-4349-a80b-d4a2a481116f"
+    task    = "proxy"
+    answer  = @{
+      url       = $ngrokUrl
+      sessionID = "rafsaw-session-007"
+    }
+  } | ConvertTo-Json -Depth 3)
+```
+
+Or paste the URL manually if you prefer:
+
+```powershell
+Invoke-RestMethod -Uri https://hub.ag3nts.org/verify `
+  -Method POST -ContentType "application/json" `
+  -Body '{
+    "apikey": "4999b7d1-5386-4349-a80b-d4a2a481116f",
+    "task": "proxy",
+    "answer": {
+      "url": "https://PASTE-YOUR-NGROK-URL-HERE.ngrok-free.app",
+      "sessionID": "rafsaw-session-007"
+    }
+  }'
+```
+
+**What Hub does after this:**
+- Sends operator messages to `POST YOUR-NGROK-URL/` with `{ sessionID, msg }`
+- Your server handles them, agent responds
+- Hub evaluates whether the mission rule was executed correctly
+
+---
+
+### Step 4 — monitor the conversation
+
+Watch the local server console for real-time logs:
+```
+→ [your-session-id] <operator message>
+← [your-session-id] <agent reply> (1234ms)
+```
+
+Check the session file to see conversation + guard decisions:
+```bash
+# Windows
+type sessions\your-session-id.json
+
+# or just open in editor
+```
+
+The mission rule working correctly looks like this in the session file:
+```json
+{ "type": "missionRules.check",   "triggered": true, "matchedKeywords": ["rdzenie", "elektrown"] },
+{ "type": "missionRules.override", "originalDestination": "PWR3847PL", "forcedDestination": "PWR6132PL" }
+```
+
+And in `function_call_output` you should see `"destination":"PWR6132PL"` — that's the proof the redirect went to the right place.
+
+---
+
+### Summary — 3 terminal setup
+
+| Terminal | Command | Purpose |
+|---|---|---|
+| 1 | `npm run dev` in `01_03_zadanie/` | Local agent server |
+| 2 | `ngrok http 3000` | Public tunnel |
+| 3 | PowerShell / curl | Send verify POST to Hub |
+
+---
+
 ## Requirements
 
 - Node.js >= 24
