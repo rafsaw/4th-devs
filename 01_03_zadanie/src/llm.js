@@ -20,7 +20,7 @@ import { resolveModelForProvider } from "../../config.js";
 
 const DIR = path.dirname(fileURLToPath(import.meta.url));
 const SCHEMA_PATH = path.resolve(DIR, "..", "specs", "tools.schema.json");
-const SYSTEM_PATH = path.resolve(DIR, "..", "specs", "system.md");
+const SYSTEM_PATH = path.resolve(DIR, "..", "specs", "system-prompt.md");
 
 export const model = resolveModelForProvider("openai/gpt-4.1-mini");
 
