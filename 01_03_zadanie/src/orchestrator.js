@@ -27,18 +27,29 @@
 import { callLLM, extractToolCalls, extractText } from "./llm.js";
 import { getHistory, appendMessages } from "./memory.js";
 import { handlers } from "./tools.js";
+import { applyMissionRules } from "./utils/missionRules.js";
 
 const MAX_ITERATIONS = 5;
 
 const FALLBACK = "Przepraszam, coś poszło nie tak. Spróbuj ponownie.";
 
-const executeTool = async (call, tracer) => {
-  const args = JSON.parse(call.arguments);
+const executeTool = async (call, tracer, history) => {
+  const rawArgs = JSON.parse(call.arguments);
+
+  // Apply deterministic mission rules before hitting the external API.
+  // This is the hard backstop — independent of what the model put in the args.
+  const args = applyMissionRules(call.name, rawArgs, { history, tracer });
+
   const fn = handlers[call.name];
 
   if (!fn) throw new Error(`Unknown tool: ${call.name}`);
 
-  tracer?.record("tool.call.start", { name: call.name, args });
+  tracer?.record("tool.call.start", {
+    name: call.name,
+    argsFromModel: rawArgs,
+    argsFinal: args,
+    guardTriggered: args.destination !== rawArgs.destination,
+  });
 
   try {
     const result = await fn(args, tracer);
@@ -87,7 +98,10 @@ export const runOrchestrator = async (sessionID, userMessage, tracer) => {
     }
 
     // Step 3 — execute tools, append results, loop again
-    const toolResults = await Promise.all(toolCalls.map((call) => executeTool(call, tracer)));
+    const currentHistory = getHistory(sessionID);
+    const toolResults = await Promise.all(
+      toolCalls.map((call) => executeTool(call, tracer, currentHistory))
+    );
     appendMessages(sessionID, [...response.output, ...toolResults]);
   }
 
