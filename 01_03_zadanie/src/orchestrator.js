@@ -33,12 +33,20 @@ const MAX_ITERATIONS = 5;
 
 const FALLBACK = "Przepraszam, coś poszło nie tak. Spróbuj ponownie.";
 
-const executeTool = async (call, tracer, history) => {
+// Valid Responses API message types — diagnostic entries must NOT be sent to the LLM.
+const LLM_VALID_TYPES = new Set(["function_call", "function_call_output", "message"]);
+const forLLM = (entry) => entry.role !== undefined || LLM_VALID_TYPES.has(entry.type);
+
+const executeTool = async (call, tracer, history, sessionID) => {
   const rawArgs = JSON.parse(call.arguments);
 
   // Apply deterministic mission rules before hitting the external API.
-  // This is the hard backstop — independent of what the model put in the args.
-  const args = applyMissionRules(call.name, rawArgs, { history, tracer });
+  // appendToSession writes diagnostic entries directly into sessions/<id>.json.
+  const args = applyMissionRules(call.name, rawArgs, {
+    history,
+    tracer,
+    appendToSession: (entry) => appendMessages(sessionID, [entry]),
+  });
 
   const fn = handlers[call.name];
 
@@ -85,8 +93,8 @@ export const runOrchestrator = async (sessionID, userMessage, tracer) => {
       conversationLength: getHistory(sessionID).length,
     });
 
-    // Step 2 — call the model with current history
-    const response = await callLLM({ input: getHistory(sessionID), tracer });
+    // Step 2 — call the model with current history (diagnostic entries filtered out)
+    const response = await callLLM({ input: getHistory(sessionID).filter(forLLM), tracer });
     const toolCalls = extractToolCalls(response);
 
     // Step 4 — plain text reply → done
@@ -100,7 +108,7 @@ export const runOrchestrator = async (sessionID, userMessage, tracer) => {
     // Step 3 — execute tools, append results, loop again
     const currentHistory = getHistory(sessionID);
     const toolResults = await Promise.all(
-      toolCalls.map((call) => executeTool(call, tracer, currentHistory))
+      toolCalls.map((call) => executeTool(call, tracer, currentHistory, sessionID))
     );
     appendMessages(sessionID, [...response.output, ...toolResults]);
   }
