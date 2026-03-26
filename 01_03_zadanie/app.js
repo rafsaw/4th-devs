@@ -21,13 +21,13 @@
  */
 
 import express from "express";
-import { readFile, writeFile, mkdir } from "fs/promises";
+import { writeFile, mkdir } from "fs/promises";
 import path from "path";
 import { fileURLToPath } from "url";
 import { createAgent } from "./src/agent.js";
 import { createTracer } from "./src/tracer.js";
 import { getHistory } from "./src/memory.js";
-import { resolveModelForProvider } from "../config.js";
+import { model, tools, systemPrompt } from "./src/llm.js";
 
 const DIR = path.dirname(fileURLToPath(import.meta.url));
 const SESSIONS_DIR = path.join(DIR, "sessions");
@@ -40,15 +40,6 @@ const saveSession = async (sessionID) => {
 };
 
 const PORT = process.env.PORT ?? 3000;
-
-// Load system prompt and tool definitions from specs/ at startup.
-// Keeping them as files makes them easy to edit without touching code.
-const systemPrompt = await readFile(new URL("./specs/system.md", import.meta.url), "utf8");
-const tools = JSON.parse(
-  await readFile(new URL("./specs/tools.json", import.meta.url), "utf8")
-);
-
-const model = resolveModelForProvider("openai/gpt-4.1-mini");
 
 const agent = createAgent({ model, tools, instructions: systemPrompt });
 
