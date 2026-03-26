@@ -16,21 +16,34 @@
 
 const FORCED_DESTINATION = "PWR6132PL";
 
-// Keywords that trigger the rule — match case-insensitively against joined text
+// Keywords that trigger the rule — match case-insensitively against joined text.
+// Use word stems where possible to catch all grammatical forms (Polish is inflected).
 const REACTOR_KEYWORDS = [
-  "reaktor",
+  // Polish — stems cover all grammatical forms
+  "reaktor",      // reaktor, reaktora, reaktorze, reaktorem...
+  "rdzeń",        // rdzeń (singular)
+  "rdzenie",      // rdzenie (plural nominative)
+  "rdzeni",       // rdzeni (plural genitive)
+  "rdzeniami",    // rdzeniami (instrumental)
+  "rdzeniem",     // rdzeniem
+  "elektrown",    // elektrownia, elektrowni, elektrownią, elektrownię...
+  "jądrow",       // jądrowy, jądrowej, jądrowe, jądrowych...
+  "nuklearn",     // nuklearny, nuklearnej...
+  "radioaktywn",  // radioaktywny, radioaktywna...
+  "uran",         // uran, uranu, uranem...
+  "paliw",        // paliwo, paliwa, paliwem, paliwa jądrowego...
+  "rozszczepial", // materiał rozszczepialny, rozszczepialnych...
+  "izotop",       // izotop, izotopy, izotopu...
+  // English equivalents
   "reactor",
-  "nuklear",
   "nuclear",
-  "części do reaktora",
+  "uranium",
+  "radioactive",
   "reactor parts",
   "reactor components",
-  "części reaktora",
-  "paliwo",   // nuclear fuel
-  "uran",
-  "uranium",
-  "radioaktywn",
-  "radioactive",
+  "fuel rod",
+  "fuel rods",
+  "fissile",
 ];
 
 /**
