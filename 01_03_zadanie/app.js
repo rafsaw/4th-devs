@@ -6,7 +6,7 @@
  * memory) is pure logic that can be tested without starting a server.
  *
  * Endpoint:
- *   POST /api/chat
+ *   POST /
  *   Body:    { sessionID: string, msg: string }
  *   Returns: { msg: string }
  *
