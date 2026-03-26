@@ -24,10 +24,9 @@ import express from "express";
 import { writeFile, mkdir } from "fs/promises";
 import path from "path";
 import { fileURLToPath } from "url";
-import { createAgent } from "./src/agent.js";
+import { runOrchestrator } from "./src/orchestrator.js";
 import { createTracer } from "./src/tracer.js";
 import { getHistory } from "./src/memory.js";
-import { model, tools, systemPrompt } from "./src/llm.js";
 
 const DIR = path.dirname(fileURLToPath(import.meta.url));
 const SESSIONS_DIR = path.join(DIR, "sessions");
@@ -40,8 +39,6 @@ const saveSession = async (sessionID) => {
 };
 
 const PORT = process.env.PORT ?? 3000;
-
-const agent = createAgent({ model, tools, instructions: systemPrompt });
 
 const app = express();
 app.use(express.json());
@@ -60,7 +57,7 @@ app.post("/", async (req, res) => {
   tracer.record("http.request", { sessionID, msg });
 
   try {
-    const reply = await agent.ask(sessionID, msg, tracer);
+    const reply = await runOrchestrator(sessionID, msg, tracer);
     const durationMs = Date.now() - requestStartedAt;
 
     tracer.record("http.response", { sessionID, reply, durationMs });
