@@ -125,7 +125,6 @@ npm run lesson3:install
 | `01_04_image_guidance` | `npm run lesson4:image_guidance` | Pose-guided image generation from JSON templates |
 | `01_04_json_image` | `npm run lesson4:json_image` | Token-efficient image generation from JSON prompts |
 | `01_04_image_editing` | `npm run lesson4:image_editing` | Iterative image generation and editing with quality checks |
-| `01_04_sprites` | `npm run lesson4:sprites` | Parallel isometric sprite-set generation from JSON templates |
 | `01_04_image_recognition` | `npm run lesson4:image_recognition` | Vision-based image classification with MCP file operations |
 
 Install dependencies:
