@@ -53,6 +53,14 @@ REPLICATE_API_TOKEN=your_replicate_token_here
 
 For image-generation examples, `OPENROUTER_API_KEY` can be used as the image backend with `google/gemini-3.1-flash-image-preview`. `GEMINI_API_KEY` remains the native fallback, and some media examples still need it for native Gemini-only features.
 
+Lesson 08 (graph agents) requires a running Neo4j 5.11+ instance:
+
+```bash
+NEO4J_URI=bolt://localhost:7687
+NEO4J_USERNAME=neo4j
+NEO4J_PASSWORD=password
+```
+
 Some Lesson 05 examples also require:
 
 ```bash
@@ -170,4 +178,144 @@ Install dependencies:
 
 ```bash
 npm run lesson7:install
+```
+
+## Lesson 08
+
+| Example | Run | Description |
+|---------|-----|-------------|
+| `02_03_graph_agents` | `npm run lesson8:graph_agents` | Graph RAG agent with Neo4j knowledge graph, hybrid search, and entity exploration |
+
+Install dependencies:
+
+```bash
+npm run lesson8:install
+```
+
+Requires a running Neo4j 5.11+ instance (needed for vector index support):
+
+```bash
+docker run -d --name neo4j -p 7474:7474 -p 7687:7687 -e NEO4J_AUTH=neo4j/password neo4j:5
+```
+
+## Lesson 09
+
+| Example | Run | Description |
+|---------|-----|-------------|
+| `02_04_ops` | `npm run lesson9:ops` | Multi-agent daily ops generator with task delegation |
+
+Install dependencies:
+
+```bash
+npm run lesson9:install
+```
+
+## Lesson 10
+
+| Example | Run | Description |
+|---------|-----|-------------|
+| `02_05_agent` | `npm run lesson10:agent` | Context engineering agent with observational memory (observer/reflector pattern) |
+| `02_05_sandbox` | `npm run lesson10:sandbox` | MCP sandbox agent with tool discovery and QuickJS code execution |
+
+Install dependencies:
+
+```bash
+npm run lesson10:install
+```
+
+## Lesson 11
+
+| Example | Run | Description |
+|---------|-----|-------------|
+| `03_01_observability` | `npm run lesson11:observability` | Minimal agent server with Langfuse tracing at the adapter boundary |
+| `03_01_evals` | `npm run lesson11:evals` | Agent server with Langfuse tracing and synthetic tool-use evaluation suite |
+
+Install dependencies:
+
+```bash
+npm run lesson11:install
+```
+
+Both examples include a demo client — start the server first in a separate terminal:
+
+```bash
+npm run lesson11:observability          # terminal 1: start server
+npm run lesson11:observability:demo     # terminal 2: run demo session against the server
+
+npm run lesson11:evals                  # terminal 1: start server
+npm run lesson11:evals:demo             # terminal 2: run demo session against the server
+npm run lesson11:evals:tools            # standalone: synthetic tool-use eval (no server needed)
+npm run lesson11:evals:correctness      # standalone: response-correctness eval (no server needed)
+```
+
+Both examples require `LANGFUSE_PUBLIC_KEY`, `LANGFUSE_SECRET_KEY`, and `LANGFUSE_BASE_URL` for tracing (optional — degrades gracefully when missing). These can be set in the root `.env` (shared) or in each project's local `.env` (takes priority).
+
+## Lesson 12
+
+| Example | Run | Description |
+|---------|-----|-------------|
+| `03_02_code` | `npm run lesson12:code` | Code execution agent with a Deno sandbox and MCP file tools |
+| `03_02_email` | `npm run lesson12:email` | Two-phase email agent: triage with labels, then isolated KB-scoped draft sessions |
+| `03_02_events` | `npm run lesson12:events` | Multi-agent event architecture with heartbeat loop, observer/reflector memory, and human-in-the-loop |
+
+Install dependencies:
+
+```bash
+npm run lesson12:install
+```
+
+`03_02_code` requires [Deno](https://deno.land/#installation) — the agent executes LLM-generated TypeScript in an isolated Deno sandbox.
+
+`03_02_events` runs an autonomous multi-round demo by default (resets workspace, runs heartbeat, prints summary):
+
+```bash
+npm run lesson12:events                                       # default: report-v2 workflow, 10 rounds
+```
+
+It requires `GEMINI_API_KEY` for image generation. Optional flags via the local `package.json`:
+
+```bash
+bun run demo --workflow report-v2 --rounds 12 --delay-ms 500  # custom rounds/delay
+bun run start                                                  # bare index.ts (no reset, no summary)
+```
+
+## Lesson 13
+
+| Example | Run | Description |
+|---------|-----|-------------|
+| `03_03_browser` | `npm run lesson13:browser` | Browser automation agent with Playwright, session persistence, and MCP file tools |
+| `03_03_calendar` | `npm run lesson13:calendar` | Calendar agent with add-events and notification-webhook phases |
+| `03_03_language` | `npm run lesson13:language` | English coaching agent with Gemini for ASR, scoring, drills, and TTS |
+
+Install dependencies:
+
+```bash
+npm run lesson13:install
+```
+
+`03_03_browser` requires a one-time login to [Goodreads](https://www.goodreads.com) to save session cookies:
+
+```bash
+npm run lesson13:browser:login   # opens browser — log into Goodreads, then press Enter
+npm run lesson13:browser          # start chatting, e.g. "List all books by Jim Collins"
+```
+
+`03_03_language` requires `GEMINI_API_KEY`.
+
+## Lesson 14
+
+| Example | Run | Description |
+|---------|-----|-------------|
+| `03_04_gmail` | `npm run lesson14:gmail` | Native Gmail tools agent with OAuth, Zod schemas, and Promptfoo evals |
+
+Install dependencies:
+
+```bash
+npm run lesson14:install
+```
+
+Requires Google OAuth credentials (`credentials.json`) and a one-time auth flow:
+
+```bash
+npm run lesson14:gmail:auth
 ```
