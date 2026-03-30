@@ -6,10 +6,11 @@ if (!AG3NTS_API_KEY) {
   console.warn("\x1b[33mWarning: AG3NTS_API_KEY is not set in .env — verify_declaration will fail\x1b[0m");
   console.warn("         Add AG3NTS_API_KEY=your-key to the root .env file");
 }
-
+//gpt-4.1
+//GPT-5 Nano
 export const api = {
-  model: resolveModelForProvider("gpt-4.1"),
-  visionModel: resolveModelForProvider("gpt-4.1"),
+  model: resolveModelForProvider("GPT-5 Nano"),
+  visionModel: resolveModelForProvider("GPT-5 Nano"),
   maxOutputTokens: 16384,
   instructions: `You are a FULLY AUTONOMOUS agent. You MUST complete the entire pipeline without stopping. NEVER ask the user questions. NEVER stop to summarize and wait. Always continue to the next step until verification succeeds or you run out of retries.
 

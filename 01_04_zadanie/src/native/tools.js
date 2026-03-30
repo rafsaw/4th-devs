@@ -26,6 +26,23 @@ const ensureDir = async (dirPath) => {
   await mkdir(dirPath, { recursive: true });
 };
 
+const TEMPLATE_START_MARKER = "SYSTEM PRZESYŁEK KONDUKTORSKICH - DEKLARACJA ZAWARTOŚCI";
+const TEMPLATE_END_MARKER = "======================================================";
+const TEMPLATE_OATH = "OŚWIADCZAM, ŻE PODANE INFORMACJE SĄ PRAWDZIWE.";
+
+const REQUIRED_FIELDS = [
+  { label: "DATA", pattern: /^DATA: .+$/m },
+  { label: "PUNKT NADAWCZY", pattern: /^PUNKT NADAWCZY: .+$/m },
+  { label: "NADAWCA", pattern: /^NADAWCA: .+$/m },
+  { label: "PUNKT DOCELOWY", pattern: /^PUNKT DOCELOWY: .+$/m },
+  { label: "TRASA", pattern: /^TRASA: .+$/m },
+  { label: "KATEGORIA PRZESYŁKI", pattern: /^KATEGORIA PRZESYŁKI: [A-E]$/m },
+  { label: "OPIS ZAWARTOŚCI", pattern: /^OPIS ZAWARTOŚCI.*: .+$/m },
+  { label: "DEKLAROWANA MASA", pattern: /^DEKLAROWANA MASA.*: .+$/m },
+  { label: "WDP", pattern: /^WDP: .+$/m },
+  { label: "KWOTA DO ZAPŁATY", pattern: /^KWOTA DO ZAPŁATY: .+$/m },
+];
+
 export const nativeTools = [
   {
     type: "function",
@@ -72,13 +89,13 @@ export const nativeTools = [
   {
     type: "function",
     name: "update_knowledge",
-    description: "Update the knowledge base with newly discovered facts. Merges new data into workspace/notes/knowledge.json. Use after finding important information in documentation.",
+    description: "Update the knowledge base with newly discovered facts. Merges new data into workspace/notes/knowledge.json. You MUST pass updates inside the 'updates' property. Example: { \"updates\": { \"templateFound\": true, \"routeCode\": \"X-01\", \"notes\": [\"Category A is system-funded\"] } }",
     parameters: {
       type: "object",
       properties: {
         updates: {
           type: "object",
-          description: "Object with fields to update in knowledge. Can include: templateFound (bool), templateLocation (string), routeCode (string), transportTypes (array), rules (object), relevantDocuments (array of strings), missingData (array), openQuestions (array), notes (array of strings)",
+          description: "Object with fields to update. Keys: templateFound (bool), templateLocation (string), routeCode (string), transportTypes (string[]), rules (object), relevantDocuments (string[]), missingData (string[]), openQuestions (string[]), notes (string[]). Arrays are merged, objects are deep-merged, scalars are overwritten.",
           additionalProperties: true
         }
       },
@@ -108,7 +125,7 @@ export const nativeTools = [
   {
     type: "function",
     name: "render_declaration",
-    description: "Save the final declaration text. You must construct the declaration yourself by filling the template fields with values from the draft/knowledge. This tool saves the text, updates the draft, and returns the result for review before verification.",
+    description: "Save the final declaration text. You must construct the declaration yourself by filling the template fields with values from the draft/knowledge. This tool saves the text, runs local validation, updates the draft, and returns the result for review before verification.",
     parameters: {
       type: "object",
       properties: {
@@ -125,7 +142,7 @@ export const nativeTools = [
   {
     type: "function",
     name: "verify_declaration",
-    description: "Submit the declaration to the verification endpoint. Sends POST to /report with task='sendit' and the declaration string. Returns the verification response.",
+    description: "Submit the declaration to the verification endpoint. Sends POST to /verify with task='sendit' and the declaration string. Returns the verification response.",
     parameters: {
       type: "object",
       properties: {
@@ -141,9 +158,50 @@ export const nativeTools = [
   }
 ];
 
+/**
+ * Local validation — Step 13.
+ * Deterministic checks before hitting the verify endpoint.
+ */
+const validateDeclaration = (text, tracer) => {
+  const issues = [];
+
+  if (!text.includes(TEMPLATE_START_MARKER)) {
+    issues.push("Missing template start marker (header line)");
+  }
+  if (!text.trim().endsWith(TEMPLATE_END_MARKER)) {
+    issues.push("Missing template end marker (closing ====== line)");
+  }
+  if (!text.includes(TEMPLATE_OATH)) {
+    issues.push("Missing oath/declaration statement");
+  }
+
+  for (const { label, pattern } of REQUIRED_FIELDS) {
+    if (!pattern.test(text)) {
+      issues.push(`Missing or malformed field: ${label}`);
+    }
+  }
+
+  const costMatch = text.match(/^KWOTA DO ZAPŁATY: (.+)$/m);
+  if (costMatch && costMatch[1].trim() !== "0 PP") {
+    issues.push(`Cost must be 0 PP, got: ${costMatch[1].trim()}`);
+  }
+
+  const separatorCount = (text.match(/^-{40,}$/gm) || []).length;
+  if (separatorCount < 8) {
+    issues.push(`Expected at least 8 separator lines (------), found ${separatorCount}`);
+  }
+
+  const valid = issues.length === 0;
+
+  tracer?.record("validation.result", { valid, issueCount: issues.length, issues });
+
+  return { valid, issues };
+};
+
 const nativeHandlers = {
-  async fetch_remote_url({ url, save_as }) {
+  async fetch_remote_url({ url, save_as }, tracer) {
     log.start(`Fetching: ${url}`);
+    tracer?.record("tool.fetch_remote_url.start", { url, save_as });
 
     const response = await fetch(url);
     if (!response.ok) {
@@ -162,13 +220,15 @@ const nativeHandlers = {
       await ensureDir(join(PROJECT_ROOT, "workspace/images"));
       await writeFile(savePath, buffer);
 
-      return {
+      const result = {
         type: "image",
         url,
         localPath: `workspace/images/${filename}`,
         size: buffer.length,
         note: "Image saved. Use analyze_image to read its content."
       };
+      tracer?.record("tool.fetch_remote_url.result", { url, type: "image", filename, size: buffer.length });
+      return result;
     }
 
     const text = await response.text();
@@ -176,39 +236,46 @@ const nativeHandlers = {
     await ensureDir(join(PROJECT_ROOT, "workspace/documents"));
     await writeFile(savePath, text, "utf-8");
 
-    return {
+    const result = {
       type: "text",
       url,
       localPath: `workspace/documents/${filename}`,
       content: text,
       length: text.length
     };
+    tracer?.record("tool.fetch_remote_url.result", { url, type: "text", filename, length: text.length });
+    return result;
   },
 
-  async analyze_image({ image_path, question }) {
+  async analyze_image({ image_path, question }, tracer) {
     const fullPath = join(PROJECT_ROOT, image_path);
     log.vision(image_path, question);
+    tracer?.record("tool.analyze_image.start", { image_path, question });
 
     const imageBuffer = await readFile(fullPath);
     const imageBase64 = imageBuffer.toString("base64");
     const mimeType = getMimeType(image_path);
 
-    const answer = await vision({ imageBase64, mimeType, question });
+    const answer = await vision({ imageBase64, mimeType, question, tracer });
     log.visionResult(answer);
 
+    tracer?.record("tool.analyze_image.result", { image_path, answerLength: answer.length });
     return { answer, image_path };
   },
 
-  async update_knowledge(args = {}) {
+  async update_knowledge(args = {}, tracer) {
     let updates = args.updates;
     if (!updates || typeof updates !== "object" || Object.keys(updates).length === 0) {
       const { updates: _ignored, ...rest } = args;
       if (Object.keys(rest).length > 0) {
         updates = rest;
       } else {
+        tracer?.record("tool.update_knowledge.skipped", { reason: "empty args" });
         return { status: "skipped", reason: "No updates provided. Pass { updates: { templateFound: true, routeCode: 'X-01' } }" };
       }
     }
+
+    tracer?.record("tool.update_knowledge.start", { updateKeys: Object.keys(updates) });
 
     const knowledgePath = join(PROJECT_ROOT, "workspace/notes/knowledge.json");
     await ensureDir(join(PROJECT_ROOT, "workspace/notes"));
@@ -242,10 +309,13 @@ const nativeHandlers = {
     }
 
     await writeFile(knowledgePath, JSON.stringify(knowledge, null, 2), "utf-8");
+    tracer?.record("tool.update_knowledge.result", { updatedKeys: Object.keys(updates) });
     return { status: "updated", knowledge };
   },
 
-  async update_draft({ fields }) {
+  async update_draft({ fields }, tracer) {
+    tracer?.record("tool.update_draft.start", { fieldKeys: Object.keys(fields) });
+
     const draftPath = join(PROJECT_ROOT, "workspace/drafts/declaration-draft.json");
     await ensureDir(join(PROJECT_ROOT, "workspace/drafts"));
 
@@ -273,10 +343,15 @@ const nativeHandlers = {
 
     Object.assign(draft, fields);
     await writeFile(draftPath, JSON.stringify(draft, null, 2), "utf-8");
+    tracer?.record("tool.update_draft.result", { updatedKeys: Object.keys(fields) });
     return { status: "updated", draft };
   },
 
-  async render_declaration({ declaration_text }) {
+  async render_declaration({ declaration_text }, tracer) {
+    tracer?.record("tool.render_declaration.start", { charCount: declaration_text.length });
+
+    const validation = validateDeclaration(declaration_text, tracer);
+
     const draftPath = join(PROJECT_ROOT, "workspace/drafts/declaration-draft.json");
     await ensureDir(join(PROJECT_ROOT, "workspace/drafts"));
 
@@ -296,21 +371,42 @@ const nativeHandlers = {
     }
 
     draft.declarationText = declaration_text;
-    draft.status = "rendered";
+    draft.status = validation.valid ? "rendered" : "validation_failed";
+    draft.lastValidation = validation;
     await writeFile(draftPath, JSON.stringify(draft, null, 2), "utf-8");
 
     const declarationPath = join(PROJECT_ROOT, "workspace/drafts/final-declaration.txt");
     await writeFile(declarationPath, declaration_text, "utf-8");
 
+    tracer?.record("tool.render_declaration.result", {
+      valid: validation.valid,
+      issues: validation.issues,
+      savedTo: "workspace/drafts/final-declaration.txt"
+    });
+
     return {
-      status: "saved",
+      status: validation.valid ? "saved" : "validation_failed",
+      validation,
       declaration_text,
       savedTo: "workspace/drafts/final-declaration.txt",
       charCount: declaration_text.length
     };
   },
 
-  async verify_declaration({ declaration }) {
+  async verify_declaration({ declaration }, tracer) {
+    tracer?.record("tool.verify_declaration.start", { charCount: declaration.length });
+
+    const preCheck = validateDeclaration(declaration, tracer);
+    if (!preCheck.valid) {
+      tracer?.record("verify.blocked_by_validation", { issues: preCheck.issues });
+      return {
+        success: false,
+        blocked: true,
+        reason: "Local validation failed — fix these issues before submitting",
+        issues: preCheck.issues
+      };
+    }
+
     const payload = {
       apikey: verifyConfig.apiKey,
       task: task.name,
@@ -350,14 +446,22 @@ const nativeHandlers = {
     const success = data?.code === 0 || data?.message?.includes("flag") || data?.message?.includes("FLG");
     log.verify(attemptLog.timestamp, success);
 
+    tracer?.record("verify.result", {
+      success,
+      httpStatus: response.status,
+      code: data?.code,
+      message: data?.message,
+      logFile: `workspace/verify-logs/${logFile.split(/[\\/]/).pop()}`
+    });
+
     return { success, data, logFile: `workspace/verify-logs/${logFile.split(/[\\/]/).pop()}` };
   }
 };
 
 export const isNativeTool = (name) => name in nativeHandlers;
 
-export const executeNativeTool = async (name, args) => {
+export const executeNativeTool = async (name, args, tracer) => {
   const handler = nativeHandlers[name];
   if (!handler) throw new Error(`Unknown native tool: ${name}`);
-  return handler(args);
+  return handler(args, tracer);
 };

@@ -1,3 +1,14 @@
+/**
+ * Logger with verbose/explain mode (Step 16).
+ *
+ * VERBOSE=true  — shows full tool args, full tool output, full vision answers
+ * VERBOSE=false — shows truncated output (default behaviour)
+ *
+ * Set via: VERBOSE=true node app.js
+ */
+
+const VERBOSE = (process.env.VERBOSE ?? "false").toLowerCase() === "true";
+
 const colors = {
   reset: "\x1b[0m",
   bright: "\x1b[1m",
@@ -16,6 +27,11 @@ const colors = {
 
 const timestamp = () => new Date().toLocaleTimeString("en-US", { hour12: false });
 
+const trunc = (str, max) => {
+  if (VERBOSE) return str;
+  return str.length > max ? str.substring(0, max) + "..." : str;
+};
+
 const log = {
   info: (msg) => console.log(`${colors.dim}[${timestamp()}]${colors.reset} ${msg}`),
   success: (msg) => console.log(`${colors.dim}[${timestamp()}]${colors.reset} ${colors.green}✓${colors.reset} ${msg}`),
@@ -33,8 +49,8 @@ const log = {
     console.log(`${colors.cyan}${"─".repeat(width)}${colors.reset}\n`);
   },
 
-  query: (q) => console.log(`\n${colors.bgBlue}${colors.white} QUERY ${colors.reset} ${q}\n`),
-  response: (r) => console.log(`\n${colors.green}Response:${colors.reset} ${r.substring(0, 300)}${r.length > 300 ? "..." : ""}\n`),
+  query: (q) => console.log(`\n${colors.bgBlue}${colors.white} QUERY ${colors.reset} ${trunc(q, 300)}\n`),
+  response: (r) => console.log(`\n${colors.green}Response:${colors.reset} ${trunc(r, 300)}\n`),
 
   api: (step, msgCount) => console.log(`${colors.dim}[${timestamp()}]${colors.reset} ${colors.magenta}◆${colors.reset} ${step} (${msgCount} messages)`),
   apiDone: (usage) => {
@@ -45,14 +61,18 @@ const log = {
 
   tool: (name, args) => {
     const argStr = JSON.stringify(args);
-    const truncated = argStr.length > 120 ? argStr.substring(0, 120) + "..." : argStr;
-    console.log(`${colors.dim}[${timestamp()}]${colors.reset} ${colors.yellow}⚡${colors.reset} ${name} ${colors.dim}${truncated}${colors.reset}`);
+    console.log(`${colors.dim}[${timestamp()}]${colors.reset} ${colors.yellow}⚡${colors.reset} ${name} ${colors.dim}${trunc(argStr, 120)}${colors.reset}`);
+    if (VERBOSE) {
+      console.log(`${colors.dim}         ARGS: ${argStr}${colors.reset}`);
+    }
   },
 
   toolResult: (name, success, output) => {
     const icon = success ? `${colors.green}✓${colors.reset}` : `${colors.red}✗${colors.reset}`;
-    const truncated = output.length > 200 ? output.substring(0, 200) + "..." : output;
-    console.log(`${colors.dim}         ${icon} ${truncated}${colors.reset}`);
+    console.log(`${colors.dim}         ${icon} ${trunc(output, 200)}${colors.reset}`);
+    if (VERBOSE && output.length > 200) {
+      console.log(`${colors.dim}         FULL OUTPUT: ${output}${colors.reset}`);
+    }
   },
 
   vision: (path, question) => {
@@ -61,8 +81,10 @@ const log = {
   },
 
   visionResult: (answer) => {
-    const truncated = answer.length > 200 ? answer.substring(0, 200) + "..." : answer;
-    console.log(`${colors.dim}         A: ${truncated}${colors.reset}`);
+    console.log(`${colors.dim}         A: ${trunc(answer, 200)}${colors.reset}`);
+    if (VERBOSE && answer.length > 200) {
+      console.log(`${colors.dim}         FULL VISION: ${answer}${colors.reset}`);
+    }
   },
 
   verify: (attempt, success) => {
@@ -70,7 +92,17 @@ const log = {
       ? `${colors.bgGreen}${colors.white} PASS ${colors.reset}`
       : `${colors.bgRed}${colors.white} FAIL ${colors.reset}`;
     console.log(`\n${icon} Verify attempt #${attempt}\n`);
-  }
+  },
+
+  explain: (title, detail) => {
+    if (!VERBOSE) return;
+    console.log(`${colors.dim}[${timestamp()}]${colors.reset} ${colors.cyan}ℹ ${title}${colors.reset}`);
+    if (detail) {
+      console.log(`${colors.dim}         ${typeof detail === "string" ? detail : JSON.stringify(detail, null, 2).replace(/\n/g, "\n         ")}${colors.reset}`);
+    }
+  },
+
+  isVerbose: () => VERBOSE,
 };
 
 export default log;
