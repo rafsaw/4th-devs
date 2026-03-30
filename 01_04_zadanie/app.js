@@ -98,6 +98,11 @@ const main = async () => {
     log.success(`MCP tools: ${mcpTools.map((t) => t.name).join(", ")}`);
     log.success(`Native tools: ${nativeTools.map((t) => t.name).join(", ")}`);
 
+    const traceToolNames = [
+      ...new Set([...mcpTools.map((t) => t.name), ...nativeTools.map((t) => t.name)])
+    ].sort();
+    tracer.setToolNames(traceToolNames);
+
     tracer.record("app.mcp_connected", {
       mcpTools: mcpTools.map(t => t.name),
       nativeTools: nativeTools.map(t => t.name),

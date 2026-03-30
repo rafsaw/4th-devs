@@ -17,10 +17,15 @@
  *   verify.*        — declaration verification attempts
  *   validation.*    — local pre-verify checks
  *
+ * Tool name compaction (optional):
+ *   After you know all tool names (e.g. MCP + native), call setToolNames([...]).
+ *   Saved JSON includes a top-level `toolNames` array; event `data` uses numeric
+ *   indices instead of repeating strings (`tool`, `toolIs`, `toolCallIs`, etc.).
+ *
  * Usage:
  *   const tracer = createTracer(sessionId);
+ *   tracer.setToolNames(["tool_a", "tool_b"]);
  *   tracer.record("agent.step.start", { step: 1, messageCount: 3 });
- *   // ... pass tracer to chat(), tools, etc.
  *   await tracer.save();
  */
 
@@ -43,18 +48,103 @@ const cloneJsonSafe = (value) => {
   }
 };
 
-export const createTracer = (sessionId = "unknown") => {
+const UNKNOWN_TOOL_I = -1;
+
+const encodeStringsToIndices = (arr, indexByName) =>
+  arr.map((name) =>
+    typeof name === "string" && indexByName.has(name)
+      ? indexByName.get(name)
+      : UNKNOWN_TOOL_I
+  );
+
+/**
+ * Replace repeated tool name strings in event payloads with indices into tracer.toolNames.
+ */
+const encodeToolRefs = (value, indexByName) => {
+  if (value === null || value === undefined) return value;
+  if (Array.isArray(value)) {
+    return value.map((item) => encodeToolRefs(item, indexByName));
+  }
+  if (typeof value !== "object") return value;
+
+  const out = { ...value };
+
+  if (typeof out.tool === "string" && indexByName.has(out.tool)) {
+    out.tool = indexByName.get(out.tool);
+  }
+
+  if (
+    Array.isArray(out.toolNames) &&
+    out.toolNames.length > 0 &&
+    out.toolNames.every((x) => typeof x === "string")
+  ) {
+    out.toolIs = encodeStringsToIndices(out.toolNames, indexByName);
+    delete out.toolNames;
+  }
+
+  if (
+    Array.isArray(out.toolCallNames) &&
+    out.toolCallNames.length > 0 &&
+    out.toolCallNames.every((x) => typeof x === "string")
+  ) {
+    out.toolCallIs = encodeStringsToIndices(out.toolCallNames, indexByName);
+    delete out.toolCallNames;
+  }
+
+  if (
+    Array.isArray(out.mcpTools) &&
+    out.mcpTools.length > 0 &&
+    out.mcpTools.every((x) => typeof x === "string")
+  ) {
+    out.mcpToolIs = encodeStringsToIndices(out.mcpTools, indexByName);
+    delete out.mcpTools;
+  }
+
+  if (
+    Array.isArray(out.nativeTools) &&
+    out.nativeTools.length > 0 &&
+    out.nativeTools.every((x) => typeof x === "string")
+  ) {
+    out.nativeToolIs = encodeStringsToIndices(out.nativeTools, indexByName);
+    delete out.nativeTools;
+  }
+
+  for (const key of Object.keys(out)) {
+    const v = out[key];
+    if (v !== null && typeof v === "object") {
+      out[key] = encodeToolRefs(v, indexByName);
+    }
+  }
+
+  return out;
+};
+
+const buildIndexByName = (names) => new Map(names.map((n, i) => [n, i]));
+
+export const createTracer = (sessionId = "unknown", options = {}) => {
   const startedAt = new Date().toISOString();
   const events = [];
   const slug = startedAt.replace(/[:.]/g, "-");
   const outputPath = join(TRACES_DIR, `${sessionId}--${slug}.json`);
 
+  let toolNames = Array.isArray(options.toolNames) ? [...options.toolNames] : [];
+  let indexByName = buildIndexByName(toolNames);
+
+  const setToolNames = (names) => {
+    toolNames = [...names];
+    indexByName = buildIndexByName(toolNames);
+  };
+
   const record = (type, data = {}) => {
+    let payload = cloneJsonSafe(data);
+    if (toolNames.length > 0) {
+      payload = encodeToolRefs(payload, indexByName);
+    }
     events.push({
       index: events.length + 1,
       timestamp: new Date().toISOString(),
       type,
-      data: cloneJsonSafe(data),
+      data: payload,
     });
   };
 
@@ -67,11 +157,12 @@ export const createTracer = (sessionId = "unknown") => {
       durationMs: Date.now() - new Date(startedAt).getTime(),
       eventsCount: events.length,
       eventTypes: [...new Set(events.map(e => e.type))],
+      ...(toolNames.length > 0 ? { toolNames } : {}),
       events,
     };
     await writeFile(outputPath, JSON.stringify(payload, null, 2) + "\n", "utf-8");
     return outputPath;
   };
 
-  return { record, save, path: outputPath, events };
+  return { record, save, setToolNames, path: outputPath, events };
 };
