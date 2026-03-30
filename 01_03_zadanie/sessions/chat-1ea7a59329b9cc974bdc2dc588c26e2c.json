@@ -1,0 +1,20 @@
+[
+  {
+    "role": "user",
+    "content": "1, 2, 3... próba chata. Jestem tu nowy i sprawdzam jak to działa"
+  },
+  {
+    "id": "msg_tmp_afb6rbqrz3m",
+    "type": "message",
+    "role": "assistant",
+    "status": "completed",
+    "content": [
+      {
+        "type": "output_text",
+        "text": "Siema! Wszystko działa, możesz pytać o paczki albo robić przekierowania. Jak coś, czuj się jak u siebie!",
+        "annotations": [],
+        "logprobs": []
+      }
+    ]
+  }
+]

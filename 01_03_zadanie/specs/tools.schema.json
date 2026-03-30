@@ -1,0 +1,44 @@
+[
+  {
+    "type": "function",
+    "name": "check_package",
+    "description": "Look up the current status, location, and delivery details of a package by its ID. Use this tool whenever the operator mentions a package ID and wants to know where it is, what its status is, or when it will arrive. Do NOT guess status — always call this tool for package inquiries.",
+    "parameters": {
+      "type": "object",
+      "properties": {
+        "packageid": {
+          "type": "string",
+          "description": "The exact package identifier provided by the operator (e.g. PKG12345678). Copy it verbatim — do not modify or infer it."
+        }
+      },
+      "required": ["packageid"],
+      "additionalProperties": false
+    },
+    "strict": true
+  },
+  {
+    "type": "function",
+    "name": "redirect_package",
+    "description": "Change the destination of a package that is currently in transit. Use this tool only when the operator explicitly requests a redirect and provides: (1) a package ID, (2) a new destination, and (3) a security code. The tool returns a confirmation code — always pass it back to the operator verbatim.",
+    "parameters": {
+      "type": "object",
+      "properties": {
+        "packageid": {
+          "type": "string",
+          "description": "The exact package identifier provided by the operator."
+        },
+        "destination": {
+          "type": "string",
+          "description": "The target destination code or address to redirect the package to, as provided by the operator."
+        },
+        "code": {
+          "type": "string",
+          "description": "The security/authorization code provided by the operator to authorize the redirect. Required by the API — do not omit or invent it."
+        }
+      },
+      "required": ["packageid", "destination", "code"],
+      "additionalProperties": false
+    },
+    "strict": true
+  }
+]

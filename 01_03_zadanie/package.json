@@ -1,0 +1,15 @@
+{
+  "name": "01_03_zadanie",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": ">=24"
+  },
+  "scripts": {
+    "start": "node --env-file=.env app.js",
+    "dev": "node --env-file=.env --watch app.js"
+  },
+  "dependencies": {
+    "express": "^4.19.2"
+  }
+}

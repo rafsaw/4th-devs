@@ -1,0 +1,40 @@
+[
+  {
+    "type": "function",
+    "name": "check_package",
+    "description": "Check the current status and details of a package by its ID.",
+    "parameters": {
+      "type": "object",
+      "properties": {
+        "packageid": {
+          "type": "string",
+          "description": "The unique package identifier."
+        }
+      },
+      "required": ["packageid"]
+    }
+  },
+  {
+    "type": "function",
+    "name": "redirect_package",
+    "description": "Redirect a package to a new destination with a given reason code. Returns a confirmation code on success.",
+    "parameters": {
+      "type": "object",
+      "properties": {
+        "packageid": {
+          "type": "string",
+          "description": "The unique package identifier."
+        },
+        "destination": {
+          "type": "string",
+          "description": "The target destination address or location code."
+        },
+        "code": {
+          "type": "string",
+          "description": "Reason or authorization code for the redirect."
+        }
+      },
+      "required": ["packageid", "destination", "code"]
+    }
+  }
+]
