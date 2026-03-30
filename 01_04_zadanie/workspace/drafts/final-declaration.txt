@@ -1,6 +1,6 @@
 SYSTEM PRZESYŁEK KONDUKTORSKICH - DEKLARACJA ZAWARTOŚCI
 ======================================================
-DATA: 2024-06-11
+DATA: 2026-03-30
 PUNKT NADAWCZY: Gdańsk
 ------------------------------------------------------
 NADAWCA: 450202122
@@ -9,7 +9,7 @@ TRASA: X-01
 ------------------------------------------------------
 KATEGORIA PRZESYŁKI: A
 ------------------------------------------------------
-OPIS ZAWARTOŚCI (max 200 znaków): kasety z paliwem do reaktora
+OPIS ZAWARTOŚCI (max 200 znaków): Kasety z paliwem do reaktora
 ------------------------------------------------------
 DEKLAROWANA MASA (kg): 2800
 ------------------------------------------------------
