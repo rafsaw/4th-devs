@@ -108,16 +108,16 @@ export const nativeTools = [
   {
     type: "function",
     name: "render_declaration",
-    description: "Render the final declaration string by filling the template with draft data. Reads template from workspace/templates/ and draft from workspace/drafts/declaration-draft.json. Returns the rendered declaration text.",
+    description: "Save the final declaration text. You must construct the declaration yourself by filling the template fields with values from the draft/knowledge. This tool saves the text, updates the draft, and returns the result for review before verification.",
     parameters: {
       type: "object",
       properties: {
-        template_path: {
+        declaration_text: {
           type: "string",
-          description: "Path to the template file relative to project root (e.g., 'workspace/templates/declaration-template.txt')"
+          description: "The complete declaration text you constructed by filling the template with the correct field values"
         }
       },
-      required: ["template_path"],
+      required: ["declaration_text"],
       additionalProperties: false
     },
     strict: true
@@ -153,9 +153,11 @@ const nativeHandlers = {
     const contentType = response.headers.get("content-type") || "";
     const isImage = contentType.startsWith("image/") || /\.(png|jpe?g|gif|webp|svg)$/i.test(url);
 
+    const rawName = save_as || url.split("/").pop() || "file";
+    const filename = rawName.split("/").pop();
+
     if (isImage) {
       const buffer = Buffer.from(await response.arrayBuffer());
-      const filename = save_as || url.split("/").pop() || "image.png";
       const savePath = join(PROJECT_ROOT, "workspace/images", filename);
       await ensureDir(join(PROJECT_ROOT, "workspace/images"));
       await writeFile(savePath, buffer);
@@ -170,7 +172,6 @@ const nativeHandlers = {
     }
 
     const text = await response.text();
-    const filename = save_as || url.split("/").pop() || "document.md";
     const savePath = join(PROJECT_ROOT, "workspace/documents", filename);
     await ensureDir(join(PROJECT_ROOT, "workspace/documents"));
     await writeFile(savePath, text, "utf-8");
@@ -198,7 +199,17 @@ const nativeHandlers = {
     return { answer, image_path };
   },
 
-  async update_knowledge({ updates }) {
+  async update_knowledge(args = {}) {
+    let updates = args.updates;
+    if (!updates || typeof updates !== "object" || Object.keys(updates).length === 0) {
+      const { updates: _ignored, ...rest } = args;
+      if (Object.keys(rest).length > 0) {
+        updates = rest;
+      } else {
+        return { status: "skipped", reason: "No updates provided. Pass { updates: { templateFound: true, routeCode: 'X-01' } }" };
+      }
+    }
+
     const knowledgePath = join(PROJECT_ROOT, "workspace/notes/knowledge.json");
     await ensureDir(join(PROJECT_ROOT, "workspace/notes"));
 
@@ -265,45 +276,47 @@ const nativeHandlers = {
     return { status: "updated", draft };
   },
 
-  async render_declaration({ template_path }) {
-    const templateFullPath = join(PROJECT_ROOT, template_path);
+  async render_declaration({ declaration_text }) {
     const draftPath = join(PROJECT_ROOT, "workspace/drafts/declaration-draft.json");
+    await ensureDir(join(PROJECT_ROOT, "workspace/drafts"));
 
-    const template = await readFile(templateFullPath, "utf-8");
-    const draft = JSON.parse(await readFile(draftPath, "utf-8"));
-
-    let rendered = template;
-    const placeholders = {
-      "{{senderId}}": draft.senderId,
-      "{{from}}": draft.from,
-      "{{to}}": draft.to,
-      "{{weightKg}}": String(draft.weightKg),
-      "{{cargo}}": draft.cargo,
-      "{{transportType}}": draft.transportType,
-      "{{routeCode}}": draft.routeCode,
-      "{{cost}}": draft.cost,
-      "{{isSystemFunded}}": draft.isSystemFunded,
-      "{{specialNotes}}": draft.specialNotes || ""
-    };
-
-    for (const [placeholder, value] of Object.entries(placeholders)) {
-      if (value !== null && value !== undefined) {
-        rendered = rendered.replaceAll(placeholder, value);
-      }
+    let draft;
+    try {
+      const content = await readFile(draftPath, "utf-8");
+      draft = JSON.parse(content);
+    } catch {
+      draft = {
+        senderId: task.senderId,
+        from: task.from,
+        to: task.to,
+        weightKg: task.weightKg,
+        cargo: task.cargo,
+        status: "in_progress"
+      };
     }
 
-    draft.declarationText = rendered;
+    draft.declarationText = declaration_text;
     draft.status = "rendered";
     await writeFile(draftPath, JSON.stringify(draft, null, 2), "utf-8");
 
-    return { rendered, draft };
+    const declarationPath = join(PROJECT_ROOT, "workspace/drafts/final-declaration.txt");
+    await writeFile(declarationPath, declaration_text, "utf-8");
+
+    return {
+      status: "saved",
+      declaration_text,
+      savedTo: "workspace/drafts/final-declaration.txt",
+      charCount: declaration_text.length
+    };
   },
 
   async verify_declaration({ declaration }) {
     const payload = {
       apikey: verifyConfig.apiKey,
       task: task.name,
-      answer: declaration
+      answer: {
+        declaration
+      }
     };
 
     log.start(`Verifying declaration (${declaration.length} chars)...`);
@@ -314,7 +327,13 @@ const nativeHandlers = {
       body: JSON.stringify(payload)
     });
 
-    const data = await response.json();
+    const rawText = await response.text();
+    let data;
+    try {
+      data = JSON.parse(rawText);
+    } catch {
+      data = { code: response.status, message: rawText.substring(0, 500) };
+    }
 
     const attemptLog = {
       timestamp: new Date().toISOString(),

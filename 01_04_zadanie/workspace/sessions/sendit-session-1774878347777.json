@@ -1,0 +1,27 @@
+{
+  "sessionId": "sendit-session-1774878347777",
+  "task": "sendit",
+  "startedAt": "2026-03-30T13:45:47.777Z",
+  "status": "completed",
+  "objective": "Build valid SPK declaration for free/system-funded shipment from Gdańsk to Żarnowiec",
+  "keyInputs": {
+    "senderId": "450202122",
+    "from": "Gdańsk",
+    "to": "Żarnowiec",
+    "weightKg": 2800,
+    "cargo": "kasety z paliwem do reaktora"
+  },
+  "importantDecisions": [],
+  "artifacts": {
+    "templatePath": null,
+    "knowledgePath": "workspace/notes/knowledge.json",
+    "draftPath": "workspace/drafts/declaration-draft.json",
+    "finalDeclarationPath": null
+  },
+  "verifyAttempts": [],
+  "finalOutcome": {
+    "success": true,
+    "response": "Deklaracja została wypełniona, sprawdzona i POMYŚLNIE ZWERYFIKOWANA (kod {FLG:WISDOM}).\n\n**Wszystkie etapy pipeline ukończone:**\n- Szablon i zasady wyekstrahowane z dokumentacji (wzór z Załącznika E, trasa X-01, status trasy, reguły zwolnień z opłat, wyliczenie WDP).\n- Wszystkie kluczowe dokumenty i załączniki przeanalizowane.\n- Deklaracja wypełniona dokładnie według wymagań i ZATWIERDZONA przez system SPK.\n\n**Finalna deklaracja (zatwierdzona):**\n```\nSYSTEM PRZESYŁEK KONDUKTORSKICH - DEKLARACJA ZAWARTOŚCI\n======================================================\nDATA: 2024-06-11\nPUNKT NADAWCZY: Gdańsk\n------------------------------------------------------\nNADAWCA: 450202122\nPUNKT DOCELOWY: Żarnowiec\nTRASA: X-01\n------------------------------------------------------\nKATEGORIA PRZESYŁKI: A\n------------------------------------------------------\nOPIS ZAWARTOŚCI (max 200 znaków): kasety z paliwem do reaktora\n------------------------------------------------------\nDEKLAROWANA MASA (kg): 2800\n------------------------------------------------------\nWDP: 4\n------------------------------------------------------\nUWAGI SPECJALNE: brak\n------------------------------------------------------\nKWOTA DO ZAPŁATY: 0 PP\n------------------------------------------------------\nOŚWIADCZAM, ŻE PODANE INFORMACJE SĄ PRAWDZIWE.\nBIORĘ NA SIEBIE KONSEKWENCJĘ ZA FAŁSZYWE OŚWIADCZENIE.\n======================================================\n```\n\n**STATUS: SUKCES. ZADANIE WYKONANE.**"
+  },
+  "finishedAt": "2026-03-30T13:46:26.726Z"
+}

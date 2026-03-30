@@ -1,23 +1,23 @@
 SYSTEM PRZESYŁEK KONDUKTORSKICH - DEKLARACJA ZAWARTOŚCI
 ======================================================
-DATA: [YYYY-MM-DD]
-PUNKT NADAWCZY: [miasto nadania]
+DATA: 2024-06-11
+PUNKT NADAWCZY: Gdańsk
 ------------------------------------------------------
-NADAWCA: [identyfikator płatnika]
-PUNKT DOCELOWY: [miasto docelowe]
-TRASA: [kod trasy]
+NADAWCA: 450202122
+PUNKT DOCELOWY: Żarnowiec
+TRASA: X-01
 ------------------------------------------------------
-KATEGORIA PRZESYŁKI: A/B/C/D/E
+KATEGORIA PRZESYŁKI: A
 ------------------------------------------------------
-OPIS ZAWARTOŚCI (max 200 znaków): [...]
+OPIS ZAWARTOŚCI (max 200 znaków): kasety z paliwem do reaktora
 ------------------------------------------------------
-DEKLAROWANA MASA (kg): [...]
+DEKLAROWANA MASA (kg): 2800
 ------------------------------------------------------
-WDP: [liczba]
+WDP: 4
 ------------------------------------------------------
-UWAGI SPECJALNE: [...]
+UWAGI SPECJALNE: brak
 ------------------------------------------------------
-KWOTA DO ZAPŁATY: [PP]
+KWOTA DO ZAPŁATY: 0 PP
 ------------------------------------------------------
 OŚWIADCZAM, ŻE PODANE INFORMACJE SĄ PRAWDZIWE.
 BIORĘ NA SIEBIE KONSEKWENCJĘ ZA FAŁSZYWE OŚWIADCZENIE.

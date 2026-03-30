@@ -1,0 +1,34 @@
+{
+  "templateFound": true,
+  "templateLocation": null,
+  "relevantDocuments": [],
+  "routeCode": "X-01",
+  "transportTypes": [],
+  "rules": {},
+  "missingData": [],
+  "openQuestions": [],
+  "notes": [],
+  "templatePath": "workspace/templates/declaration-template.txt",
+  "wyłączoneTrasy": [
+    "X-01",
+    "X-02",
+    "X-03",
+    "X-04",
+    "X-05",
+    "X-06",
+    "X-07",
+    "X-08"
+  ],
+  "trasaGdanskZarnowiec": "X-01",
+  "exemptCategories": [
+    "A",
+    "B"
+  ],
+  "WDPDefinition": "WDP = liczna dodatkowych wagonów ponad standardowy skład 2 wagonów (1000 kg ładowności); każdy dodatkowy wagon = 500 kg. Dla kat. A/B, opłata za dodatkowe wagony nie jest naliczana.",
+  "systemFundedCategories": [
+    "A",
+    "B"
+  ],
+  "uwagiSpecjalneConstraint": "Nie dodawać uwag nieuzasadnionych. Dla przesyłek strategicznych i medycznych, pole UWAGI SPECJALNE może być puste lub zawierać informację zgodnie z wytycznymi Systemu.",
+  "wagaStandard": "Podstawowy skład: 2 wagony = 1000 kg. Dodatkowe wagony co 500 kg."
+}
