@@ -26,7 +26,7 @@ export const chat = async ({
   tracer?.record("llm.request", {
     model,
     inputItems: input.length,
-    toolNames: tools?.map(t => t.name) ?? [],
+    toolCount: tools?.length ?? 0,
     instructionsLength: instructions?.length ?? 0,
   });
 
@@ -55,8 +55,7 @@ export const chat = async ({
     inputTokens: data.usage?.input_tokens,
     outputTokens: data.usage?.output_tokens,
     outputItems: data.output?.length ?? 0,
-    hasToolCalls: toolCalls.length > 0,
-    toolCallNames: toolCalls.map(c => c.name),
+    toolCallCount: toolCalls.length,
     textPreview: extractResponseText(data)?.substring(0, 200) || null,
   });
 

@@ -19,8 +19,8 @@
  *
  * Tool name compaction (optional):
  *   After you know all tool names (e.g. MCP + native), call setToolNames([...]).
- *   Saved JSON includes a top-level `toolNames` array; event `data` uses numeric
- *   indices instead of repeating strings (`tool`, `toolIs`, `toolCallIs`, etc.).
+ *   Saved JSON includes a top-level `toolNames` catalog; per-event `tool` fields
+ *   are stored as indices into that catalog (LLM traces use `toolCount` only).
  *
  * Usage:
  *   const tracer = createTracer(sessionId);
@@ -48,17 +48,8 @@ const cloneJsonSafe = (value) => {
   }
 };
 
-const UNKNOWN_TOOL_I = -1;
-
-const encodeStringsToIndices = (arr, indexByName) =>
-  arr.map((name) =>
-    typeof name === "string" && indexByName.has(name)
-      ? indexByName.get(name)
-      : UNKNOWN_TOOL_I
-  );
-
 /**
- * Replace repeated tool name strings in event payloads with indices into tracer.toolNames.
+ * Replace `tool` string fields with indices into tracer.toolNames.
  */
 const encodeToolRefs = (value, indexByName) => {
   if (value === null || value === undefined) return value;
@@ -71,42 +62,6 @@ const encodeToolRefs = (value, indexByName) => {
 
   if (typeof out.tool === "string" && indexByName.has(out.tool)) {
     out.tool = indexByName.get(out.tool);
-  }
-
-  if (
-    Array.isArray(out.toolNames) &&
-    out.toolNames.length > 0 &&
-    out.toolNames.every((x) => typeof x === "string")
-  ) {
-    out.toolIs = encodeStringsToIndices(out.toolNames, indexByName);
-    delete out.toolNames;
-  }
-
-  if (
-    Array.isArray(out.toolCallNames) &&
-    out.toolCallNames.length > 0 &&
-    out.toolCallNames.every((x) => typeof x === "string")
-  ) {
-    out.toolCallIs = encodeStringsToIndices(out.toolCallNames, indexByName);
-    delete out.toolCallNames;
-  }
-
-  if (
-    Array.isArray(out.mcpTools) &&
-    out.mcpTools.length > 0 &&
-    out.mcpTools.every((x) => typeof x === "string")
-  ) {
-    out.mcpToolIs = encodeStringsToIndices(out.mcpTools, indexByName);
-    delete out.mcpTools;
-  }
-
-  if (
-    Array.isArray(out.nativeTools) &&
-    out.nativeTools.length > 0 &&
-    out.nativeTools.every((x) => typeof x === "string")
-  ) {
-    out.nativeToolIs = encodeStringsToIndices(out.nativeTools, indexByName);
-    delete out.nativeTools;
   }
 
   for (const key of Object.keys(out)) {

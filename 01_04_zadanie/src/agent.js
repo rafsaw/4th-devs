@@ -85,7 +85,7 @@ export const run = async (query, { mcpClient, mcpTools, tracer }) => {
 
     tracer?.record("agent.step.tools_requested", {
       step,
-      toolNames: toolCalls.map(tc => tc.name),
+      requestedToolCount: toolCalls.length,
     });
 
     messages.push(...response.output);

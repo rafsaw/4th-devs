@@ -104,8 +104,8 @@ const main = async () => {
     tracer.setToolNames(traceToolNames);
 
     tracer.record("app.mcp_connected", {
-      mcpTools: mcpTools.map(t => t.name),
-      nativeTools: nativeTools.map(t => t.name),
+      mcpToolCount: mcpTools.length,
+      nativeToolCount: nativeTools.length,
     });
 
     log.start("Starting documentation exploration and declaration building...");
