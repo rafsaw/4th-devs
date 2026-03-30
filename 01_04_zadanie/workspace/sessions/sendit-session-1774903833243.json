@@ -1,0 +1,82 @@
+{
+  "sessionId": "sendit-session-1774903833243",
+  "task": "sendit",
+  "startedAt": "2026-03-30T20:50:33.243Z",
+  "status": "completed",
+  "objective": "Build valid SPK declaration for free/system-funded shipment from Gdańsk to Żarnowiec",
+  "keyInputs": {
+    "senderId": "450202122",
+    "from": "Gdańsk",
+    "to": "Żarnowiec",
+    "weightKg": 2800,
+    "cargo": "kasety z paliwem do reaktora"
+  },
+  "importantDecisions": [
+    {
+      "timestamp": "2026-03-30T20:51:24.419Z",
+      "type": "knowledge_update",
+      "keys": [
+        "declarationTemplateExtracted",
+        "templatePath",
+        "excludedRoutes",
+        "excludedRoutesTitle",
+        "routeCodeGdanskZarnowiec",
+        "routeCodeSource",
+        "systemFundedCategories",
+        "WDPInfo",
+        "specialNotesRules",
+        "classCDEFees",
+        "classAandBAreFree",
+        "attachedDocs"
+      ]
+    },
+    {
+      "timestamp": "2026-03-30T20:52:21.075Z",
+      "type": "declaration_rendered",
+      "valid": false
+    },
+    {
+      "timestamp": "2026-03-30T20:52:24.741Z",
+      "type": "declaration_rendered",
+      "valid": true
+    }
+  ],
+  "artifacts": {
+    "templatePath": null,
+    "knowledgePath": "workspace/notes/knowledge.json",
+    "draftPath": "workspace/drafts/declaration-draft.json",
+    "finalDeclarationPath": null
+  },
+  "verifyAttempts": [
+    {
+      "timestamp": "2026-03-30T20:52:30.545Z",
+      "success": true,
+      "code": 0,
+      "message": "{FLG:WISDOM}"
+    }
+  ],
+  "finalOutcome": {
+    "success": true,
+    "response": "✔️ SUKCES: Poprawnie wykonano pełen proces budowy i weryfikacji deklaracji SPK dla przesyłki z Gdańska do Żarnowca!\n\nKLUCZOWE FAKTY I POSTĘPOWANIE:\n- Szablon deklaracji został wydobyty dokładnie z Załącznika E i zachowany w oryginalnej strukturze (z separatorami i przysięgą).\n- Wybrano trasę X-01, jedyną dozwoloną do Żarnowca (wyłączona – dostęp tylko dla kat. A/B).\n- Kategoria wybrana: A (system-funded, 0 PP), dzięki czemu przesyłka spełnia wymóg braku kosztu.\n- Obliczono WDP: masa całkowita 2800 kg, czyli (2800/500 = 5,6 → 6 wagonów; 6-2=4 dodatkowe wagony; dla kat. A – opłata zwolniona, ale liczba się zgadza).\n- „Uwaga specjalna” wg specyfikacji – wpisano „brak” (instrukcja: puste/brak – jeśli nie jest wymagana przez System).\n- Wszystkie zmienne pobrane wyłącznie z dokumentacji lub wytycznych systemowych, bez zgadywania.\n\nDEKLARACJA WZORCOWA (zaakceptowana przez System):\n\n```\nSYSTEM PRZESYŁEK KONDUKTORSKICH - DEKLARACJA ZAWARTOŚCI\n======================================================\nDATA: 2024-06-13\nPUNKT NADAWCZY: Gdańsk\n------------------------------------------------------\nNADAWCA: 450202122\nPUNKT DOCELOWY: Żarnowiec\nTRASA: X-01\n------------------------------------------------------\nKATEGORIA PRZESYŁKI: A\n------------------------------------------------------\nOPIS ZAWARTOŚCI (max 200 znaków): kasety z paliwem do reaktora\n------------------------------------------------------\nDEKLAROWANA MASA (kg): 2800\n------------------------------------------------------\nWDP: 4\n------------------------------------------------------\nUWAGI SPECJALNE: brak\n------------------------------------------------------\nKWOTA DO ZAPŁATY: 0 PP\n------------------------------------------------------\nOŚWIADCZAM, ŻE PODANE INFORMACJE SĄ PRAWDZIWE.\nBIORĘ NA SIEBIE KONSEKWENCJĘ ZA FAŁSZYWE OŚWIADCZENIE.\n======================================================\n```\n\n✔️ DEKLARACJA ZAAKCEPTOWANA {FLG:WISDOM}\n\nSystem dokumentacji, reguły transportowe i szablon deklaracji zostały w pełni rozpoznane, wykorzystane i poprawnie odwzorowane.\nZadanie zakończone PROWADZENIEM — przesyłka gotowa do nadania według procedur systemowych!"
+  },
+  "validations": [
+    {
+      "timestamp": "2026-03-30T20:52:21.072Z",
+      "valid": false,
+      "issues": [
+        "Cost must be 0 PP, got: 0"
+      ]
+    },
+    {
+      "timestamp": "2026-03-30T20:52:24.739Z",
+      "valid": true,
+      "issues": []
+    },
+    {
+      "timestamp": "2026-03-30T20:52:30.119Z",
+      "valid": true,
+      "issues": []
+    }
+  ],
+  "finishedAt": "2026-03-30T20:52:42.031Z"
+}

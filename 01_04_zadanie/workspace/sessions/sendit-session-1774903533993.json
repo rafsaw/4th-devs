@@ -1,0 +1,65 @@
+{
+  "sessionId": "sendit-session-1774903533993",
+  "task": "sendit",
+  "startedAt": "2026-03-30T20:45:33.993Z",
+  "status": "completed",
+  "objective": "Build valid SPK declaration for free/system-funded shipment from Gdańsk to Żarnowiec",
+  "keyInputs": {
+    "senderId": "450202122",
+    "from": "Gdańsk",
+    "to": "Żarnowiec",
+    "weightKg": 2800,
+    "cargo": "kasety z paliwem do reaktora"
+  },
+  "importantDecisions": [
+    {
+      "timestamp": "2026-03-30T20:46:14.900Z",
+      "type": "knowledge_update",
+      "keys": [
+        "declaration_template",
+        "route_code",
+        "route_origin",
+        "route_destination",
+        "excluded_routes",
+        "categories_free",
+        "notes"
+      ]
+    },
+    {
+      "timestamp": "2026-03-30T20:46:26.624Z",
+      "type": "declaration_rendered",
+      "valid": true
+    }
+  ],
+  "artifacts": {
+    "templatePath": null,
+    "knowledgePath": "workspace/notes/knowledge.json",
+    "draftPath": "workspace/drafts/declaration-draft.json",
+    "finalDeclarationPath": null
+  },
+  "verifyAttempts": [
+    {
+      "timestamp": "2026-03-30T20:46:30.359Z",
+      "success": true,
+      "code": 0,
+      "message": "{FLG:WISDOM}"
+    }
+  ],
+  "finalOutcome": {
+    "success": true,
+    "response": "SUCCESS — SPK declaration pipeline completed!\n\n- All documentation and attachments were fetched and processed.\n- Extracted: template, route code, rules for categories, WDP calculation, and special route restrictions.\n- Built declaration using the EXACT required structure and shipment details.\n- Filled all fields per official rules (category A for 0 PP, X-01 route for Gdańsk → Żarnowiec, WDP: 4).\n- Declaration has been successfully verified by the system: {FLG:WISDOM}\n\nAll workspace files (template, knowledge, draft, verify log) saved for audit/compliance. Task complete."
+  },
+  "validations": [
+    {
+      "timestamp": "2026-03-30T20:46:26.621Z",
+      "valid": true,
+      "issues": []
+    },
+    {
+      "timestamp": "2026-03-30T20:46:29.896Z",
+      "valid": true,
+      "issues": []
+    }
+  ],
+  "finishedAt": "2026-03-30T20:46:33.125Z"
+}

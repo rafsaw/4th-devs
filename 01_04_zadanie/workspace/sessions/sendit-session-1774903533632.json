@@ -1,0 +1,23 @@
+{
+  "sessionId": "sendit-session-1774903533632",
+  "task": "sendit",
+  "startedAt": "2026-03-30T20:45:33.632Z",
+  "status": "running",
+  "objective": "Build valid SPK declaration for free/system-funded shipment from Gdańsk to Żarnowiec",
+  "keyInputs": {
+    "senderId": "450202122",
+    "from": "Gdańsk",
+    "to": "Żarnowiec",
+    "weightKg": 2800,
+    "cargo": "kasety z paliwem do reaktora"
+  },
+  "importantDecisions": [],
+  "artifacts": {
+    "templatePath": null,
+    "knowledgePath": "workspace/notes/knowledge.json",
+    "draftPath": "workspace/drafts/declaration-draft.json",
+    "finalDeclarationPath": null
+  },
+  "verifyAttempts": [],
+  "finalOutcome": null
+}

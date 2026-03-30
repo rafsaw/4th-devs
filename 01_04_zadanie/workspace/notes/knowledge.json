@@ -1,0 +1,62 @@
+{
+  "templateFound": false,
+  "templateLocation": null,
+  "relevantDocuments": [],
+  "routeCode": null,
+  "transportTypes": [],
+  "rules": {},
+  "missingData": [],
+  "openQuestions": [],
+  "notes": [
+    "Routes to Żarnowiec (code X-01 to X-04) are excluded (Wyłączone) and may only be used for category A and B shipments.",
+    "Category A (Strategiczna) and Category B (Medyczna) are system-funded (0 PP).",
+    "Standard train = 2 wagons, 500 kg each = 1000 kg. Additional wagons needed if over 1000 kg. WDP = (ceil(weight/500) - 2; minimum 0).",
+    "WDP = Dodatkowe Wagony Płatne (Number of additional wagons above standard consist).",
+    "If value for KWOTA DO ZAPŁATY = 0 PP, use category A or B only."
+  ],
+  "declaration_template": "SYSTEM PRZESYŁEK KONDUKTORSKICH - DEKLARACJA ZAWARTOŚCI\n======================================================\nDATA: [YYYY-MM-DD]\nPUNKT NADAWCZY: [miasto nadania]\n------------------------------------------------------\nNADAWCA: [identyfikator płatnika]\nPUNKT DOCELOWY: [miasto docelowe]\nTRASA: [kod trasy]\n------------------------------------------------------\nKATEGORIA PRZESYŁKI: A/B/C/D/E\n------------------------------------------------------\nOPIS ZAWARTOŚCI (max 200 znaków): [...]\n------------------------------------------------------\nDEKLAROWANA MASA (kg): [...]\n------------------------------------------------------\nWDP: [liczba]\n------------------------------------------------------\nUWAGI SPECJALNE: [...]\n------------------------------------------------------\nKWOTA DO ZAPŁATY: [PP]\n------------------------------------------------------\nOŚWIADCZAM, ŻE PODANE INFORMACJE SĄ PRAWDZIWE.\nBIORĘ NA SIEBIE KONSEKWENCJĘ ZA FAŁSZYWE OŚWIADCZENIE.\n======================================================",
+  "route_code": "X-01",
+  "route_origin": "Gdańsk",
+  "route_destination": "Żarnowiec",
+  "excluded_routes": [
+    "X-01",
+    "X-02",
+    "X-03",
+    "X-04"
+  ],
+  "categories_free": [
+    "A",
+    "B"
+  ],
+  "declarationTemplateExtracted": true,
+  "templatePath": "workspace/documents/zalacznik-E.md",
+  "excludedRoutes": [
+    "X-01",
+    "X-02",
+    "X-03",
+    "X-04"
+  ],
+  "excludedRoutesTitle": "Gdańsk – Żarnowiec i odgałęzienia - wyłączone przez Dyrektywę Specjalną 7.7, tylko kat. A oraz B mają dostęp!",
+  "routeCodeGdanskZarnowiec": "X-01",
+  "routeCodeSource": "trasy-wylaczone.png",
+  "systemFundedCategories": [
+    "A",
+    "B"
+  ],
+  "WDPInfo": "WDP = liczba dodatkowych wagonów ponad standardowe 2 (każdy wagon 500 kg, standardowy skład 1000 kg). Opłata za WDP nie dotyczy kategorii A i B.",
+  "specialNotesRules": "UWAGI SPECJALNE: zostawić puste lub 'brak' jeśli nie wymagane przez System.",
+  "classCDEFees": {
+    "C": "2+ PP",
+    "D": "5+ PP",
+    "E": "10+ PP"
+  },
+  "classAandBAreFree": true,
+  "attachedDocs": [
+    "dodatkowe-wagony.md",
+    "zalacznik-E.md",
+    "trasy-wylaczone.png",
+    "zalacznik-F.md",
+    "zalacznik-G.md",
+    "zalacznik-D.md"
+  ]
+}
