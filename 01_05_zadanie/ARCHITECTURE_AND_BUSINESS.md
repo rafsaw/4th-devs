@@ -41,15 +41,15 @@ flowchart LR
 
   subgraph App["01_05_zadanie"]
     A[app.js]
-    G[Agent loop\nsrc/agent.js]
-    N[Native tools\nsrc/native/tools.js]
-    H[HTTP client\nsrc/helpers/railway-http.js]
+    G["Agent loop<br/>src/agent.js"]
+    N["Native tools<br/>src/native/tools.js"]
+    H["HTTP client<br/>src/helpers/railway-http.js"]
   end
 
   subgraph External["External systems"]
-    LLM[Responses API\n(OpenAI / OpenRouter)]
-    MCP[MCP files server\nfiles-mcp]
-    VFY[hub.ag3nts.org/verify]
+    LLM["Responses API<br/>OpenAI or OpenRouter"]
+    MCP["MCP files server<br/>files-mcp"]
+    VFY["hub.ag3nts.org verify"]
   end
 
   U --> A
@@ -67,25 +67,25 @@ flowchart LR
 
 ```mermaid
 flowchart TB
-  subgraph Entry["Entry & lifecycle"]
+  subgraph Entry["Entry and lifecycle"]
     APP[app.js]
-    SESS[session-manager\nCreate / update / close session]
-    TR[trace-logger\nIn-memory events → JSON file]
+    SESS["session-manager<br/>create, update, close session"]
+    TR["trace-logger<br/>in-memory events to JSON file"]
   end
 
   subgraph Orchestration["Agent orchestration"]
-    RUN[src/agent.js\nMax steps, tool dispatch]
-    CHAT[helpers/api.js\nLLM chat + tracing]
+    RUN["src/agent.js<br/>max steps, tool dispatch"]
+    CHAT["helpers/api.js<br/>LLM chat and tracing"]
   end
 
   subgraph Tools["Tools"]
-    MCP[src/mcp/client.js\nstdio MCP]
-    NT[src/native/tools.js\nrailway_* tools]
+    MCP["src/mcp/client.js<br/>stdio MCP"]
+    NT["src/native/tools.js<br/>railway tools"]
   end
 
-  subgraph Resilience["Resilience & I/O"]
-    RH[railway-http.js\npostRailwayVerify]
-    WS[(workspace/\nrailway-logs, notes, traces, sessions)]
+  subgraph Resilience["Resilience and I/O"]
+    RH["railway-http.js<br/>postRailwayVerify"]
+    WS[("workspace<br/>railway-logs, notes, traces, sessions")]
   end
 
   APP --> SESS
@@ -106,26 +106,26 @@ flowchart TB
 
 ```mermaid
 flowchart TD
-  Q[User intent embedded in AGENT_QUERY\n+ system instructions] --> L[LLM: next message or tool calls]
+  Q["User intent AGENT_QUERY<br/>plus system instructions"] --> L["LLM: next message or tool calls"]
 
   L -->|tool calls| T{Tool type?}
 
-  T -->|MCP| F[files-mcp:\nread/write workspace files]
-  T -->|native| R[railway_api_call / list / update_state]
+  T -->|MCP| F["files-mcp<br/>read write workspace"]
+  T -->|native| R["railway_api_call list update_state"]
 
-  R --> HTTP[postRailwayVerify:\nfetch + retry + log file]
-  HTTP --> API[(verify API)]
+  R --> HTTP["postRailwayVerify<br/>fetch, retry, log file"]
+  HTTP --> API[("verify API")]
 
-  HTTP --> LOG[workspace/railway-logs/*.json]
-  R --> OUT[Structured JSON to LLM]
+  HTTP --> LOG["workspace railway-logs json"]
+  R --> OUT["Structured JSON to LLM"]
 
   F --> OUT
   OUT --> L
 
-  L -->|final text| ANS[Console + session.finalOutcome]
+  L -->|final text| ANS["Console and session outcome"]
 
-  APPX[Post-run] --> TRFILE[workspace/traces/*.json]
-  APPX --> SESSJ[workspace/sessions/*.json enriched]
+  APPX["Post-run"] --> TRFILE["workspace traces json"]
+  APPX --> SESSJ["workspace sessions json enriched"]
 ```
 
 ---
@@ -134,27 +134,27 @@ flowchart TD
 
 ```mermaid
 sequenceDiagram
-  participant App as app.js
-  participant Ag as agent.js
+  participant App as app entry
+  participant Ag as agent loop
   participant LLM as Responses API
   participant NT as railway_api_call
-  participant HTTP as railway-http.js
+  participant HTTP as railway_http
   participant API as verify API
 
-  App->>Ag: run(query, mcp, tracer)
-  Ag->>LLM: chat(messages, tools, tracer)
-  LLM-->>Ag: function_call(s) or final text
+  App->>Ag: run query mcp tracer
+  Ag->>LLM: chat messages tools tracer
+  LLM-->>Ag: function calls or final text
   alt Tool calls
-    Ag->>NT: executeNativeTool(...)
-    NT->>HTTP: postRailwayVerify({ answer, tracer, ... })
+    Ag->>NT: execute native tool
+    NT->>HTTP: postRailwayVerify answer tracer
     loop Until success or no more retries
       HTTP->>API: POST JSON
-      API-->>HTTP: response / error
+      API-->>HTTP: response or error
     end
-    HTTP-->>NT: outcome + log path
+    HTTP-->>NT: outcome and log path
     NT-->>Ag: JSON tool output
     Ag->>LLM: append tool results
-  else No tools (finished)
+  else No tools finished
     Ag-->>App: final response text
   end
 ```
@@ -211,13 +211,13 @@ sequenceDiagram
   participant HTTP as postRailwayVerify
   participant API as verify API
 
-  HTTP->>API: POST (attempt n)
-  API-->>HTTP: 503 + Retry-After: 12
-  Note over HTTP: shouldRetry = true\nfromHeader ≈ 12s
-  HTTP->>HTTP: sleep(max(12s, 500ms) + jitter)
-  HTTP->>API: POST (attempt n+1)
-  API-->>HTTP: 200 + body
-  Note over HTTP: break; write log file;\nemit verify.result
+  HTTP->>API: POST attempt n
+  API-->>HTTP: 503 and Retry-After 12
+  Note over HTTP: shouldRetry true, fromHeader about 12s
+  HTTP->>HTTP: sleep max 12s 500ms plus jitter
+  HTTP->>API: POST attempt n plus 1
+  API-->>HTTP: 200 and body
+  Note over HTTP: write log file emit verify.result
 ```
 
 ### 6.4 Tracer events for observability
