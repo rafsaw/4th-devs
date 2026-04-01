@@ -1,5 +1,7 @@
 # Railway agent — architecture & business document
 
+**Companion docs:** [`README.md`](README.md) (runbook + model choice), [`ARCHITECTURE.md`](ARCHITECTURE.md) (extension of `01_04_zadanie`, layers, flow, model rationale).
+
 This document describes the **01_05_zadanie** application: what problem it solves, how it is built, how data flows, and how **HTTP errors and rate-limit / availability headers** are handled. It is written for both **business** stakeholders and **technical** readers.
 
 ---
