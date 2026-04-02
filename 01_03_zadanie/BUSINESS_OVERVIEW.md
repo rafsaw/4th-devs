@@ -2,6 +2,8 @@
 
 This note explains **what the application does**, **why it is described as an “agentic” system**, and **how a typical conversation flows**. It is written for readers who understand products and processes more than code.
 
+**Related:** for module layout, sequences, guard mechanics, and trace files, see [`specs/design/ARCHITECTURE.md`](specs/design/ARCHITECTURE.md).
+
 ---
 
 ## What this application is
@@ -75,6 +77,163 @@ flowchart LR
 ```
 
 **In one sentence:** the operator sends **text over HTTP** → your service runs an **AI + tools loop** → either a **human-sounding** chat reply or **tool calls** into your code → package operations hit the **carrier-style packages API** → the operator gets a **JSON reply** with plain-language text.
+
+---
+
+## Ecosystem: Hub, public URL, and the operator
+
+In the course setup, a **central Hub** may drive the conversation: you **register** your service’s public URL and a **session ID**; the Hub then sends operator-style messages to your endpoint. That pattern mirrors how a real product might connect a **control plane** (routing work to the right tenant or bot) with your **runtime** (this agent).
+
+```mermaid
+flowchart TB
+  subgraph Registration["One-time or repeated registration"]
+    Dev[Developer or CI] -->|POST verify| HubReg[hub.ag3nts.org /verify]
+    HubReg -->|stores| HubStore[Hub: url + sessionID for task proxy]
+  end
+
+  subgraph Runtime["Per message — live conversation"]
+    HubOp[Hub as operator driver] -->|POST JSON sessionID msg| Tunnel[Public HTTPS e.g. ngrok]
+    Tunnel --> AgentSvc[Package Proxy Agent :3000]
+    AgentSvc -->|reply JSON msg| Tunnel
+    Tunnel --> HubOp
+  end
+
+  subgraph Backends["Authoritative data"]
+    AgentSvc <-->|chat completions| LLMProv[AI provider]
+    AgentSvc -->|check redirect| PkgAPI[hub.ag3nts.org/api/packages]
+  end
+```
+
+**Takeaway for business readers:** your **contract with the outside world** is a simple chat-shaped API (`sessionID` + `msg` in, `msg` out). Everything “smart” happens **inside** your service, with **auditable** tool calls and optional **trace files** for reviewers.
+
+---
+
+## Stakeholders and what each cares about
+
+```mermaid
+mindmap
+  root((Package Proxy Agent))
+    Operator
+      Fast clear answers
+      Same tone as dispatch desk
+      Correct codes and statuses
+    Compliance or security
+      Sensitive cargo rules enforced in code
+      No reliance on model alone for redirects
+    Platform or Hub
+      Stable URL and session semantics
+      Predictable JSON schema
+    Engineering
+      Spec-driven behaviour
+      Reproducible traces per request
+```
+
+| Stakeholder | Primary interest | How the solution supports it |
+|-------------|------------------|------------------------------|
+| **Operator** | Finish tasks in one conversation | Session memory, natural language, tools for real API data |
+| **Reviewer / auditor** | Prove policy was applied | `missionRules.*` entries in session files and traces; forced destination visible server-side |
+| **Hub / integrator** | Simple HTTP integration | Single `POST /`, fixed response shape |
+| **Product owner** | Human-like UX without hallucinated logistics | Tools ground answers; persona is separate from facts |
+
+---
+
+## Business data flow (conceptual)
+
+This diagram is **not** a network diagram; it shows **information responsibility**—who may **originate** versus who **authorizes** shipment facts.
+
+```mermaid
+flowchart LR
+  subgraph Inputs["Inputs"]
+    U[Operator natural language]
+    K[Auth / redirect code from workflow]
+    PID[Package identifier]
+  end
+
+  subgraph Brain["Interpretation layer"]
+    AI[LLM chooses wording and tool calls]
+  end
+
+  subgraph Enforcement["Enforcement layer"]
+    G[Mission rule guard]
+    T[Tool handlers]
+  end
+
+  subgraph Truth["System of record"]
+    API[Packages API]
+  end
+
+  U --> AI
+  PID --> AI
+  K --> AI
+  AI -->|structured tool args| G
+  G --> T
+  T -->|HTTP| API
+  API -->|JSON results| T
+  T --> AI
+  AI -->|final msg| Out[Operator-facing reply]
+```
+
+**Grounding rule:** anything that must match **carrier records** (status, confirmation codes, errors) flows through **tools → API**. The model’s **prose** can be warm and colloquial; the **facts** come back from the API (or structured tool errors).
+
+---
+
+## Operator journey (typical paths)
+
+```mermaid
+journey
+  title One session from the operator perspective
+  section Greeting
+    Send hello: 5: Operator
+    Get casual reply: 5: Operator
+  section Package question
+    Ask to check ID: 5: Operator
+    See status from system: 5: Operator
+  section Redirect
+    Ask redirect with code: 4: Operator
+    Get confirmation wording: 5: Operator
+  section Sensitive cargo edge case
+    Mention reactor-related wording: 3: Operator
+    See reply matching requested destination: 4: Operator
+    Actual API destination corrected server-side: 5: Compliance
+```
+
+The last section is **invisible** to the operator by design: the **business outcome** (correct routing to the mandated facility) is enforced **without** changing the conversational promise in the UI.
+
+---
+
+## Swimlane: who decides what on a redirect
+
+```mermaid
+flowchart TB
+  subgraph Operator_lane["Operator"]
+    O1[States intent and destination]
+  end
+
+  subgraph Model_lane["AI model"]
+    M1[May draft tool call with destination]
+    M2[Composes user-facing reply]
+  end
+
+  subgraph Code_lane["Your service code"]
+    C1[applyMissionRules on redirect_package]
+    C2[HTTP to packages API with final args]
+    C3[Persist history and traces]
+  end
+
+  subgraph API_lane["Packages API"]
+    A1[Validates code and applies redirect]
+  end
+
+  O1 --> M1
+  M1 --> C1
+  C1 --> C2
+  C2 --> A1
+  A1 --> C2
+  C2 --> M2
+  M2 --> O1
+```
+
+**Business reading:** the model **proposes**; **code and API** **commit**. For reactor-related phrases, **code** may **override** the destination before the API sees the request.
 
 ---
 
@@ -190,8 +349,8 @@ For a production product you would typically store this in a database; in this e
 
 ## Rendering the diagrams
 
-These diagrams use [Mermaid](https://mermaid.js.org/). They render on GitHub, in many Markdown viewers, and in tools like Notion (with a Mermaid block). If a viewer does not support Mermaid, paste the code into [Mermaid Live Editor](https://mermaid.live/) and export PNG or SVG.
+These diagrams use [Mermaid](https://mermaid.js.org/). They render on GitHub, in many Markdown viewers, and in tools like Notion (with a Mermaid block). **Mindmap** and **journey** diagram types require a recent Mermaid version; if your viewer fails on those blocks, open them in [Mermaid Live Editor](https://mermaid.live/) or export PNG or SVG from there.
 
 ---
 
-*Document version: aligned with the `01_03_zadanie` package proxy exercise — HTTP text in, human-like conversational replies vs tool/function calls, developer-built tools against a carrier-style packages API, human-like system prompt (including off-topic small talk), and a code-level redirect guard.*
+*Document version: aligned with the `01_03_zadanie` package proxy exercise — HTTP text in, human-like conversational replies vs tool/function calls, developer-built tools against a carrier-style packages API, human-like system prompt (including off-topic small talk), and a code-level redirect guard. Includes ecosystem, stakeholder, conceptual data flow, operator journey, and swimlane diagrams.*

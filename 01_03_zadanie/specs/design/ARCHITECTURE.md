@@ -3,6 +3,8 @@
 Minimal Node.js HTTP agent that lets operators manage packages via natural language.
 Built spec-first: behaviour is defined in `specs/` files, code just wires it together.
 
+**Related:** for stakeholders and product language (persona, agentic behaviour, mission rule in business terms), see [`BUSINESS_OVERVIEW.md`](../../BUSINESS_OVERVIEW.md) in the project root.
+
 ---
 
 ## File structure
@@ -32,6 +34,102 @@ Built spec-first: behaviour is defined in `specs/` files, code just wires it tog
     └── utils/
         └── missionRules.js       ← deterministic guard: reactor → PWR6132PL
 ```
+
+---
+
+## C4-style context (system in its environment)
+
+Context-level view (portable Mermaid — renders on GitHub and most viewers):
+
+```mermaid
+flowchart TB
+  Op["Operator / evaluation Hub"]
+  Sys["Package Proxy Agent\n(Node.js, Express)"]
+  LLM["AI provider\n(Responses API)"]
+  API["Packages API\nhub.ag3nts.org"]
+
+  Op <-->|"POST / sessionID msg\nJSON msg"| Sys
+  Sys <-->|"completions plus tools"| LLM
+  Sys -->|"check redirect"| API
+```
+
+---
+
+## C4-style containers (inside the agent service)
+
+```mermaid
+flowchart TB
+  subgraph Agent["Package Proxy Agent — logical containers"]
+    HTTP["app.js\nHTTP + validation + persistence hooks"]
+    ORCH["orchestrator.js\nTool loop, max 5 iterations"]
+    MEM["memory.js\nIn-memory Map per sessionID"]
+    LLM["llm.js\nSpecs load, callLLM, parse output"]
+    TOOLS["tools.js + adapters\ncheckPackage, redirectPackage"]
+    GUARD["missionRules.js\nKeyword scan, override destination"]
+    TRACE["tracer.js\nPer-request JSON trace"]
+  end
+
+  ExtLLM[(AI API)]
+  ExtPkg[(Packages API)]
+
+  HTTP --> ORCH
+  ORCH --> MEM
+  ORCH --> LLM
+  ORCH --> GUARD
+  ORCH --> TOOLS
+  ORCH --> TRACE
+  LLM --> ExtLLM
+  TOOLS --> ExtPkg
+  GUARD -.->|diagnostics| MEM
+```
+
+---
+
+## Spec loading and runtime configuration (startup data flow)
+
+```mermaid
+flowchart LR
+  subgraph Disk["Repository files"]
+    SP[specs/system-prompt.md]
+    TS[specs/tools.schema.json]
+    ENV[.env plus root config.js]
+  end
+
+  subgraph Process["Node process at import time"]
+    LLM[llm.js]
+    Adapters[checkPackage redirectPackage]
+  end
+
+  SP -->|read once| LLM
+  TS -->|parse JSON once| LLM
+  ENV -->|API keys model endpoint| LLM
+  ENV -->|AG3NTS_API_KEY URL| Adapters
+```
+
+`llm.js` **embeds** the system prompt and tool schema into every `callLLM` request (`instructions` + `tools`). Adapters read **packages** API URL and key from the environment when executing HTTP. Redirect guard keywords and forced destination live **in code** (`src/utils/missionRules.js`), not in external spec files.
+
+---
+
+## Deployment (course / local / public URL)
+
+```mermaid
+flowchart LR
+  subgraph Public["Internet"]
+    Hub[hub.ag3nts.org\nverify plus operator traffic]
+  end
+
+  subgraph DevMachine["Developer machine"]
+    Ngrok[ngrok or tunnel\nHTTPS public URL]
+    Node[Node.js process\nnpm run dev]
+  end
+
+  Hub -->|POST to registered URL| Ngrok
+  Ngrok -->|forward| Node
+  Node -->|Responses API| CloudAI[AI provider]
+  Node -->|api packages| Hub
+```
+
+For Hub-driven tasks you **register** `url` + `sessionID` once; subsequent operator messages hit `POST /` on that URL. See root `README.md` for the verify payload shape.
 
 ---
 
@@ -111,6 +209,115 @@ sequenceDiagram
     App->>App: tracer.save() → traces/*.json
     App->>App: saveSession()  → sessions/*.json
     App-->>Op: { msg: "reply" }
+```
+
+---
+
+## Orchestrator state (one HTTP request)
+
+```mermaid
+stateDiagram-v2
+  [*] --> AppendUser: runOrchestrator
+  AppendUser --> LoopHead: append user message
+
+  state LoopHead <<choice>>
+  LoopHead --> CallLLM: iterations remaining
+  LoopHead --> Fallback: max iterations reached
+
+  CallLLM --> Parse: response received
+  state Parse <<choice>>
+  Parse --> SaveAssistantText: text only
+  Parse --> ExecuteTools: tool calls present
+
+  SaveAssistantText --> [*]: return reply text
+  ExecuteTools --> AppendToolIO: missionRules plus handlers
+  AppendToolIO --> LoopHead: append tool IO
+
+  Fallback --> [*]: return FALLBACK string
+```
+
+Constants: `MAX_ITERATIONS = 5` in `orchestrator.js`. Diagnostic history entries (`missionRules.*`) are filtered by `forLLM` before each `callLLM`.
+
+---
+
+## Sequence: check_package (happy path)
+
+```mermaid
+sequenceDiagram
+  participant Op as Client
+  participant App as app.js
+  participant Orch as orchestrator
+  participant LLM as llm.js
+  participant AI as AI API
+  participant Tools as tools.js
+  participant Chk as checkPackage.js
+  participant API as Packages API
+
+  Op->>App: POST / check PKG-...
+  App->>Orch: runOrchestrator
+  Orch->>LLM: callLLM(filtered history)
+  LLM->>AI: Responses API + tools
+  AI-->>LLM: function_call check_package
+  LLM-->>Orch: toolCalls
+  Note over Orch: redirect only → missionRules
+  Orch->>Tools: check_package(args)
+  Tools->>Chk: checkPackage(packageid)
+  Chk->>API: POST action check
+  API-->>Chk: status JSON
+  Chk-->>Tools: result
+  Tools-->>Orch: function_call_output
+  Orch->>LLM: callLLM(history with output)
+  AI-->>LLM: final message text
+  LLM-->>Orch: extractText
+  Orch-->>App: reply string
+  App-->>Op: { msg }
+```
+
+---
+
+## Sequence: errors and resilience
+
+```mermaid
+sequenceDiagram
+  participant Op as Client
+  participant App as app.js
+  participant Orch as orchestrator
+  participant Tools as tools.js
+
+  Note over Op,Tools: Validation error — no orchestrator
+  Op->>App: POST / missing msg
+  App-->>Op: 400 { error }
+
+  Note over Op,Tools: Tool throws — caught in executeTool
+  Op->>App: valid POST
+  App->>Orch: runOrchestrator
+  Orch->>Tools: handler
+  Tools-->>Orch: function_call_output with { error: message }
+  Note over Orch: Loop continues; model may explain failure
+
+  Note over Op,Tools: Unhandled exception
+  Op->>App: valid POST
+  App->>Orch: runOrchestrator
+  Orch-->>App: throws
+  App->>App: tracer http.error, save trace
+  App-->>Op: 500 { error: Internal error }
+```
+
+Tool-level failures are **serialized into** `function_call_output` so the model can produce a user-facing explanation. Uncaught errors bubble to Express and yield **HTTP 500**.
+
+---
+
+## Parallel tool calls
+
+When the model returns **multiple** `function_call` items in one response, `orchestrator.js` runs `Promise.all` over `executeTool` for each call, then appends **all** outputs in one `appendMessages` batch. Traces record each tool start/result independently.
+
+```mermaid
+flowchart LR
+  R[LLM response.output] --> Split{multiple calls?}
+  Split -->|yes| P[Promise.all executeTool]
+  Split -->|no| S[single executeTool]
+  P --> A[appendMessages output + results]
+  S --> A
 ```
 
 ---
