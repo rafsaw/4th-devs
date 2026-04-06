@@ -1,0 +1,21 @@
+{
+  "timestamp": "2026-04-04T17:17:45.476Z",
+  "request": {
+    "task": "railway",
+    "answer": {
+      "action": "save",
+      "route": "x-01"
+    }
+  },
+  "outcome": {
+    "ok": true,
+    "httpStatus": 200,
+    "headers": {},
+    "data": {
+      "code": 0,
+      "message": "{FLG:COUNTRYROADS}"
+    },
+    "rawText": "{\n    \"code\": 0,\n    \"message\": \"{FLG:COUNTRYROADS}\"\n}",
+    "attempts": 2
+  }
+}

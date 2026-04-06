@@ -1,0 +1,25 @@
+{
+  "timestamp": "2026-04-04T17:16:44.843Z",
+  "request": {
+    "task": "railway",
+    "answer": {
+      "action": "setstatus",
+      "route": "x-01",
+      "value": "RTOPEN"
+    }
+  },
+  "outcome": {
+    "ok": true,
+    "httpStatus": 200,
+    "headers": {},
+    "data": {
+      "ok": true,
+      "route": "X-01",
+      "mode": "reconfigure",
+      "status": "open",
+      "message": "Status updated."
+    },
+    "rawText": "{\n    \"ok\": true,\n    \"route\": \"X-01\",\n    \"mode\": \"reconfigure\",\n    \"status\": \"open\",\n    \"message\": \"Status updated.\"\n}",
+    "attempts": 2
+  }
+}

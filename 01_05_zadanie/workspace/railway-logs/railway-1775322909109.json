@@ -1,0 +1,23 @@
+{
+  "timestamp": "2026-04-04T17:15:09.110Z",
+  "request": {
+    "task": "railway",
+    "answer": {
+      "action": "getstatus",
+      "route": "x-01"
+    }
+  },
+  "outcome": {
+    "ok": true,
+    "httpStatus": 200,
+    "headers": {},
+    "data": {
+      "ok": true,
+      "route": "X-01",
+      "mode": "reconfigure",
+      "status": "close"
+    },
+    "rawText": "{\n    \"ok\": true,\n    \"route\": \"X-01\",\n    \"mode\": \"reconfigure\",\n    \"status\": \"close\"\n}",
+    "attempts": 2
+  }
+}

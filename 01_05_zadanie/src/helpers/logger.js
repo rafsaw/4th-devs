@@ -73,6 +73,20 @@ const log = {
     }
   },
 
+  /** After hub verify POST (native `railway_api_call`); matches 01_04_zadanie logger API */
+  verify: (timestampOrAttempt, success) => {
+    const icon = success
+      ? `${colors.bgGreen}${colors.white} PASS ${colors.reset}`
+      : `${colors.bgRed}${colors.white} FAIL ${colors.reset}`;
+    const isIso =
+      typeof timestampOrAttempt === "string"
+      && /^\d{4}-\d{2}-\d{2}T/.test(timestampOrAttempt);
+    const suffix = isIso
+      ? `at ${timestampOrAttempt}`
+      : `attempt #${timestampOrAttempt}`;
+    console.log(`\n${icon} Verify ${suffix}\n`);
+  },
+
   explain: (title, detail) => {
     if (!VERBOSE) return;
     console.log(`${colors.dim}[${timestamp()}]${colors.reset} ${colors.cyan}ℹ ${title}${colors.reset}`);

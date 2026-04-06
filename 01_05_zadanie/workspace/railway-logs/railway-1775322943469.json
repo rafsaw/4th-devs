@@ -1,0 +1,24 @@
+{
+  "timestamp": "2026-04-04T17:15:43.469Z",
+  "request": {
+    "task": "railway",
+    "answer": {
+      "action": "save",
+      "route": "x-01"
+    }
+  },
+  "outcome": {
+    "ok": true,
+    "httpStatus": 200,
+    "headers": {},
+    "data": {
+      "code": 1,
+      "route": "X-01",
+      "mode": "normal",
+      "status": "close",
+      "message": "Configuration saved. Reconfigure mode disabled for this route."
+    },
+    "rawText": "{\n    \"code\": 1,\n    \"route\": \"X-01\",\n    \"mode\": \"normal\",\n    \"status\": \"close\",\n    \"message\": \"Configuration saved. Reconfigure mode disabled for this route.\"\n}",
+    "attempts": 3
+  }
+}

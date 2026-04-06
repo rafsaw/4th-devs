@@ -1,0 +1,75 @@
+{
+  "timestamp": "2026-04-04T17:14:07.381Z",
+  "request": {
+    "task": "railway",
+    "answer": {
+      "action": "help"
+    }
+  },
+  "outcome": {
+    "ok": true,
+    "httpStatus": 200,
+    "headers": {},
+    "data": {
+      "ok": true,
+      "action": "help",
+      "help": {
+        "actions": [
+          {
+            "action": "help",
+            "requires": [],
+            "optional": [],
+            "about": "Show available actions and parameters."
+          },
+          {
+            "action": "reconfigure",
+            "requires": [
+              "route"
+            ],
+            "optional": [],
+            "about": "Enable reconfigure mode for the given route."
+          },
+          {
+            "action": "getstatus",
+            "requires": [
+              "route"
+            ],
+            "optional": [],
+            "about": "Get current status for the given route."
+          },
+          {
+            "action": "setstatus",
+            "requires": [
+              "route",
+              "value"
+            ],
+            "optional": [],
+            "about": "Set route status while in reconfigure mode.",
+            "allowed_values": [
+              "RTOPEN",
+              "RTCLOSE"
+            ]
+          },
+          {
+            "action": "save",
+            "requires": [
+              "route"
+            ],
+            "optional": [],
+            "about": "Exit reconfigure mode for the given route."
+          }
+        ],
+        "route_format": "[a-z]-[0-9]{1,2} (case-insensitive)",
+        "status_values": {
+          "RTOPEN": "open",
+          "RTCLOSE": "close"
+        },
+        "notes": [
+          "To change status of the road, you must first set it to \"reconfigure\" mode."
+        ]
+      }
+    },
+    "rawText": "{\n    \"ok\": true,\n    \"action\": \"help\",\n    \"help\": {\n        \"actions\": [\n            {\n                \"action\": \"help\",\n                \"requires\": [],\n                \"optional\": [],\n                \"about\": \"Show available actions and parameters.\"\n            },\n            {\n                \"action\": \"reconfigure\",\n                \"requires\": [\n                    \"route\"\n                ],\n                \"optional\": [],\n                \"about\": \"Enable reconfigure mode for the given route.\"\n            },\n            {\n                \"action\": \"getstatus\",\n                \"requires\": [\n                    \"route\"\n                ],\n                \"optional\": [],\n                \"about\": \"Get current status for the given route.\"\n            },\n            {\n                \"action\": \"setstatus\",\n                \"requires\": [\n                    \"route\",\n                    \"value\"\n                ],\n                \"optional\": [],\n                \"about\": \"Set route status while in reconfigure mode.\",\n                \"allowed_values\": [\n                    \"RTOPEN\",\n                    \"RTCLOSE\"\n                ]\n            },\n            {\n                \"action\": \"save\",\n                \"requires\": [\n                    \"route\"\n                ],\n                \"optional\": [],\n                \"about\": \"Exit reconfigure mode for the given route.\"\n            }\n        ],\n        \"route_format\": \"[a-z]-[0-9]{1,2} (case-insensitive)\",\n        \"status_values\": {\n            \"RTOPEN\": \"open\",\n            \"RTCLOSE\": \"close\"\n        },\n        \"notes\": [\n            \"To change status of the road, you must first set it to \\\"reconfigure\\\" mode.\"\n        ]\n    }\n}",
+    "attempts": 1
+  }
+}
