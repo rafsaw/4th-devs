@@ -378,3 +378,103 @@ npm run lesson16:garden:preview
 `04_01_garden` reads the shared repo-level `.env` through the workspace `config.js`, so it can run with either `OPENAI_API_KEY` or `OPENROUTER_API_KEY`. If both keys are present, it defaults to OpenAI unless you set `AI_PROVIDER=openrouter`.
 
 A good first exercise is to ask the agent to add 3-4 favorite books to the shelf, then run `npm run lesson16:garden:preview` to rebuild the grove and open the generated site locally.
+
+## Lesson 19
+
+| Example | Run | Description |
+|---------|-----|-------------|
+| `04_04_system` | `npm run lesson19:system` | Multi-agent system with MCP tools, agent delegation, and a markdown workspace |
+| `04_04_system` (daily news) | `npm run lesson19:daily-news` | Daily-news workflow demo with sequential phase delegation |
+| `04_04_system` (examples) | `npm run lesson19:examples` | Example queries: ideas, knowledge notes, contacts, tools, and sources |
+
+Install dependencies:
+
+```bash
+npm run lesson19:install
+```
+
+`04_04_system` reads the shared repo-level `.env` through the workspace `config.js`, so it can run with either `OPENAI_API_KEY` or `OPENROUTER_API_KEY`.
+
+Run individual example queries by number (1-7):
+
+```bash
+npm run lesson19:examples -- 1
+```
+
+
+## Lesson 20
+
+| Example | Run | Description |
+|---------|-----|-------------|
+| `04_05_apps` | `npm run lesson20:apps` | Marketing ops agent with MCP-powered dashboard apps (todos, newsletters, sales, coupons, Stripe) |
+| `04_05_apps` (MCP server) | `npm run lesson20:apps:mcp` | MCP server backing the apps agent |
+| `04_05_review` | `npm run lesson20:review` | AI-powered markdown document review with inline comments, suggestions, and a Svelte UI |
+
+Install dependencies:
+
+```bash
+npm run lesson20:install
+```
+
+`04_05_apps` requires the MCP server running in a separate terminal **before** starting the app:
+
+```bash
+npm run lesson20:apps:mcp    # terminal 1: start MCP server
+npm run lesson20:apps        # terminal 2: start the app
+```
+
+`04_05_review` builds the Svelte frontend and starts the server in one step:
+
+```bash
+npm run lesson20:review
+```
+
+Both examples read the shared repo-level `.env` through the workspace `config.js`, so they can run with either `OPENAI_API_KEY` or `OPENROUTER_API_KEY`.
+
+
+## Lesson 21
+
+| Example | Run | Description |
+|---------|-----|-------------|
+| `05_01_agent_graph` | `npm run lesson21:agent_graph` | Multi-agent graph with orchestrator, task delegation, artifact writing, and a live Cytoscape dashboard |
+
+Install dependencies:
+
+```bash
+npm run lesson21:install
+```
+
+`05_01_agent_graph` reads the shared repo-level `.env` through the workspace `config.js`, so it can run with either `OPENAI_API_KEY` or `OPENROUTER_API_KEY`.
+
+Pass a custom task as the first argument (defaults to a TypeScript 5.0 blog post):
+
+```bash
+cd 05_01_agent_graph && npm start "Research and summarise the latest advances in WebAssembly"
+```
+
+The dashboard opens automatically in the browser at `http://127.0.0.1:3001` (or the next available port). All session data is persisted to `.data/` and cleared on each run.
+
+## Lesson 22
+
+| Example | Run | Description |
+|---------|-----|-------------|
+| `05_02_ui` | `npm run lesson22:ui` | Svelte 5 streaming chat UI with SSE, tool cards, artifact previews, and virtual long-history rendering |
+| `05_02_voice` | `npm run lesson22:voice` | LiveKit voice agent with Gemini Realtime, OpenAI, or ElevenLabs TTS and MCP tool access |
+
+Install dependencies:
+
+```bash
+npm run lesson22:install
+```
+
+`05_02_ui` reads the shared repo-level `.env` through its own server-side config, so it supports both `OPENAI_API_KEY` and `OPENROUTER_API_KEY`. The default model is `gpt-4.1`, overridable via `LIVE_UI_MODEL`. Dev mode starts the Bun API server on `http://localhost:3300` and the Vite UI on `http://localhost:5173`.
+
+`05_02_voice` requires a [LiveKit Cloud](https://cloud.livekit.io) account (or self-hosted instance) and the following env vars:
+
+```bash
+LIVEKIT_URL=wss://your-project.livekit.cloud
+LIVEKIT_API_KEY=your_api_key
+LIVEKIT_API_SECRET=your_api_secret
+```
+
+Voice stack is resolved automatically from available keys: `GOOGLE_API_KEY` / `GEMINI_API_KEY` → Gemini Realtime; `ELEVEN_API_KEY` + `OPENAI_API_KEY` → OpenAI LLM + ElevenLabs TTS; `OPENAI_API_KEY` alone → full OpenAI stack.
