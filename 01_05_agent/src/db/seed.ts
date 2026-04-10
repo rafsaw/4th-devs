@@ -37,7 +37,7 @@ async function seed() {
 
   // Seed users
   const seedUsers = [
-    { email: 'alice@aidevs.pl', apiKey: process.env.SEED_API_KEY ?? '0f47acce-3aa7-4b58-9389-21b2940ecc70' },
+    { email: 'rafsaw@gmail.com', apiKey: process.env.SEED_API_KEY ?? '1' },
   ]
 
   for (const { email, apiKey } of seedUsers) {

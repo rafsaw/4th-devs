@@ -287,8 +287,8 @@ Models use `provider:model` format:
 
 | Provider | Example models |
 |---|---|
-| `openai` | `openai:gpt-4.1`, `openai:gpt-4.1-mini` |
-| `gemini` | `gemini:gemini-3-flash-preview`, `gemini:gemini-2.5-pro-preview-05-06` |
+| `openai` | `openai:gpt-4.1`, `openai:gpt-4.1-mini`,`openai/gpt-5-nano` |
+| `gemini` | `gemini:gemini-2.5-flash-lite`,`gemini:gemini-3-flash-preview`, `gemini:gemini-2.5-pro-preview-05-06` |
 
 ## Database
 
