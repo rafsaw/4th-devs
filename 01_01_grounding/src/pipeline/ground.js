@@ -58,9 +58,10 @@ const buildGroundingItems = (conceptsData, dedupeData, searchData) => {
   });
 };
 
+const GROUND_RETRIES = 2;
+
 const groundSingleParagraph = async (paragraph, relevantItems, index, total) => {
   if (!relevantItems.length) {
-    // No grounding items for this paragraph, just convert to basic HTML
     return convertToBasicHtml(paragraph);
   }
 
@@ -75,15 +76,26 @@ const groundSingleParagraph = async (paragraph, relevantItems, index, total) => 
     total
   });
 
-  const data = await callResponses({
-    model: models.ground,
-    input,
-    textFormat: groundSchema,
-    reasoning: { effort: "medium" }
-  });
+  for (let attempt = 0; attempt <= GROUND_RETRIES; attempt++) {
+    try {
+      const data = await callResponses({
+        model: models.ground,
+        input,
+        textFormat: groundSchema,
+        reasoning: { effort: "medium" }
+      });
 
-  const result = parseJsonOutput(data, `ground: paragraph ${index + 1}`);
-  return result.html;
+      const result = parseJsonOutput(data, `ground: paragraph ${index + 1}`);
+      return result.html;
+    } catch (error) {
+      if (attempt < GROUND_RETRIES) {
+        console.warn(`    ⚠ [${index + 1}] retry ${attempt + 1}/${GROUND_RETRIES}: ${error.message.slice(0, 100)}`);
+        continue;
+      }
+      console.warn(`    ⚠ [${index + 1}] grounding failed, using plain HTML: ${error.message.slice(0, 120)}`);
+      return convertToBasicHtml(paragraph);
+    }
+  }
 };
 
 const convertToBasicHtml = (paragraph) => {
