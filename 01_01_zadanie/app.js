@@ -8,14 +8,14 @@ import {
   resolveModelForProvider
 } from "../config.js";
 import { extractResponseText } from "../01_01_structured/helpers.js";
-//openai/gpt-5-nano
-//arcee-ai/trinity-large-preview:free
-const MODEL = resolveModelForProvider("arcee-ai/trinity-large-preview:free");
+// OpenRouter: dawny "arcee-ai/trinity-large-preview:free" zwraca 404 — używamy tego samego co 01_01_structured.
+const MODEL = resolveModelForProvider("gpt-5.4");
 
 const HUB_VERIFY_URL = "https://hub.ag3nts.org/verify";
 const HUB_TASK_NAME = "people";
 const DEFAULT_HUB_API_KEY = "4999b7d1-5386-4349-a80b-d4a2a481116f";
 const HUB_API_KEY = (process.env.AI_DEVS_4_KEY ?? DEFAULT_HUB_API_KEY).trim();
+const HUB_VERIFY_LOG_FILE = new URL("./hub_verify_exchange.json", import.meta.url);
 
 // Default CSV location from the exercise description. Can be overridden with PEOPLE_CSV_PATH env.
 // const DEFAULT_CSV_PATH = "Z:\\courses\\AI Devs 4\\s01e01\\people.csv";
@@ -249,34 +249,58 @@ async function tagJobsBatch(people) {
 }
 
 async function submitToHub(answer) {
+  const requestPayload = {
+    apikey: HUB_API_KEY,
+    task: HUB_TASK_NAME,
+    answer
+  };
+
   const response = await fetch(HUB_VERIFY_URL, {
     method: "POST",
     headers: {
       "Content-Type": "application/json"
     },
-    body: JSON.stringify({
-      apikey: HUB_API_KEY,
-      task: HUB_TASK_NAME,
-      answer
-    })
+    body: JSON.stringify(requestPayload)
   });
 
   const text = await response.text();
+
+  let responseBody;
+  try {
+    responseBody = JSON.parse(text);
+  } catch {
+    responseBody = text;
+  }
+
+  await writeFile(
+    HUB_VERIFY_LOG_FILE,
+    JSON.stringify(
+      {
+        url: HUB_VERIFY_URL,
+        sentAt: new Date().toISOString(),
+        request: requestPayload,
+        response: {
+          ok: response.ok,
+          status: response.status,
+          body: responseBody
+        }
+      },
+      null,
+      2
+    ),
+    "utf8"
+  );
 
   if (!response.ok) {
     throw new Error(`Hub request failed with status ${response.status}: ${text}`);
   }
 
-  let data;
-
-  try {
-    data = JSON.parse(text);
-  } catch {
-    console.log("Hub raw response:", text);
+  if (typeof responseBody === "string") {
+    console.log("Hub raw response:", responseBody);
     return;
   }
 
-  console.log("Hub response:", data);
+  console.log("Hub response:", responseBody);
 }
 
 async function main() {
