@@ -1,0 +1,24 @@
+{
+  "name": "s02e01-categorize-harness",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "typecheck": "tsc --noEmit -p tsconfig.json",
+    "safe-local": "tsx src/index.ts --mode SAFE_LOCAL",
+    "remote-experiment": "tsx src/index.ts --mode REMOTE_EXPERIMENT",
+    "reset": "tsx src/reset.ts",
+    "start": "tsx src/index.ts"
+  },
+  "dependencies": {
+    "dotenv": "^16.6.1",
+    "js-tiktoken": "^1.0.21",
+    "zod": "^3.24.1"
+  },
+  "devDependencies": {
+    "@types/node": "^22.15.21",
+    "tsx": "^4.19.4",
+    "typescript": "^5.8.3"
+  }
+}
