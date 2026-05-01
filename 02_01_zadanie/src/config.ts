@@ -6,7 +6,7 @@ const envSchema = z.object({
   AI_DEVS_4_KEY: z.string().min(1).optional(),
   OPENROUTER_API_KEY: z.string().min(1).optional(),
   ENGINEER_MODEL: z.string().default("anthropic/claude-sonnet-4-6"),
-  MODE: z.enum(["SAFE_LOCAL", "REMOTE_EXPERIMENT"]).optional(),
+  MODE: z.enum(["REMOTE_EXPERIMENT"]).optional(),
   HUB_BASE_URL: z.string().url().default("https://hub.ag3nts.org"),
   MAX_ITERATIONS: z.coerce.number().int().min(1).default(8),
   TOKEN_LIMIT: z.coerce.number().int().min(10).default(100),
@@ -34,11 +34,11 @@ export interface AppConfig {
 
 export function loadConfig(cliMode?: Mode): AppConfig {
   const parsed = envSchema.parse(process.env);
-  const mode = cliMode ?? parsed.MODE ?? "SAFE_LOCAL";
+  const mode = cliMode ?? parsed.MODE ?? "REMOTE_EXPERIMENT";
   const apiKey = parsed.API_KEY ?? parsed.AI_DEVS_4_KEY;
 
-  if (mode === "REMOTE_EXPERIMENT" && !apiKey) {
-    throw new Error("API_KEY or AI_DEVS_4_KEY is required in REMOTE_EXPERIMENT mode.");
+  if (!apiKey) {
+    throw new Error("API_KEY or AI_DEVS_4_KEY is required.");
   }
 
   return {

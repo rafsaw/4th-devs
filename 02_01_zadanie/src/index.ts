@@ -22,7 +22,7 @@ function parseModeFromArgv(): Mode | undefined {
     }
   }
   if (!value) return undefined;
-  if (value === "SAFE_LOCAL" || value === "REMOTE_EXPERIMENT") return value;
+  if (value === "REMOTE_EXPERIMENT") return value;
   throw new Error(`Invalid mode: ${value}`);
 }
 

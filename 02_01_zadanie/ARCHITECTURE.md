@@ -6,7 +6,6 @@
 - `src/experimentRunner.ts` — planner + orchestrator + experiment loop.
 - `src/prompting.ts` — prompt candidate registry and refiner.
 - `src/hubClient.ts` — remote CSV + verify + reset client with retry/backoff.
-- `src/localMockClassifier.ts` — local SAFE mode classifier.
 - `src/tokenEstimator.ts` — token length estimator.
 - `src/budgetManager.ts` — PP budget tracking and pre-flight checks.
 - `src/stateManager.ts` — session and artifact persistence.
@@ -20,16 +19,12 @@ flowchart TD
   A[CLI Runner] --> B[Config Loader]
   B --> C[Experiment Orchestrator]
   C --> D[Prompt Candidate Registry]
-  C --> E[CSV Source]
-  E -->|SAFE_LOCAL| F[Mock Dataset]
-  E -->|REMOTE_EXPERIMENT| G[Hub CSV Endpoint]
+  C --> G[Hub CSV Endpoint]
   C --> H[Prompt Composer]
   H --> I[Token Estimator]
   I --> J{<= 100 tokens?}
   J -- no --> K[Record failure + hypothesis]
-  J -- yes --> L[Verifier]
-  L -->|SAFE_LOCAL| M[Mock Classifier]
-  L -->|REMOTE_EXPERIMENT| N[Hub Verify Endpoint]
+  J -- yes --> N[Hub Verify Endpoint]
   N --> O[Output Normalizer DNG/NEU only]
   O --> P[Budget Manager]
   P --> Q[State Manager session/budget/best prompt]
@@ -105,10 +100,12 @@ This follows:
 - minimal dynamic mutation surface,
 - better signal-to-noise under tiny context windows.
 
-## Safety boundary
+## Task exception boundary
 
-Unsafe requirement from story (misclassifying dangerous reactor goods as neutral) is intentionally excluded.
+This harness implements the task-specific exception exactly as defined in this exercise.
 
-Safety policy implemented in both modes:
-- reactor-related goods are treated as hazardous (`DNG`),
-- no bypass/evasion logic is present in code.
+Rule implemented in this harness:
+- items mentioning reactor parts or fuel rods are always classified as `NEU`,
+- all other goods are classified using hazard rules (`DNG`) vs neutral fallback (`NEU`).
+
+This is an exercise-specific behavior for the `categorize` challenge, not a general shipping safety policy.

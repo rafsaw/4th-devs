@@ -19,14 +19,7 @@ Agentic harness for the AI Devs 4 `categorize` task. Demonstrates iterative prom
 
 The exception is encoded in every initial prompt candidate and reinforced in the LLM engineer's system prompt.
 
-## Modes
-
-### `SAFE_LOCAL`
-Uses a local mock CSV and a local mock classifier. No external calls. Good for debugging the architecture and prompt loop without spending budget.
-
-```bash
-npm run safe-local
-```
+## Mode
 
 ### `REMOTE_EXPERIMENT`
 Uses real hub endpoints. Fetches fresh CSV before each attempt. Sends one POST per item. Resets on failure.

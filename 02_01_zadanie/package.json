@@ -6,7 +6,6 @@
   "scripts": {
     "build": "tsc -p tsconfig.json",
     "typecheck": "tsc --noEmit -p tsconfig.json",
-    "safe-local": "tsx src/index.ts --mode SAFE_LOCAL",
     "remote-experiment": "tsx src/index.ts --mode REMOTE_EXPERIMENT",
     "reset": "tsx src/reset.ts",
     "start": "tsx src/index.ts"

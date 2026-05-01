@@ -1,4 +1,4 @@
-export type Mode = "SAFE_LOCAL" | "REMOTE_EXPERIMENT";
+export type Mode = "REMOTE_EXPERIMENT";
 
 export type Label = "DNG" | "NEU";
 

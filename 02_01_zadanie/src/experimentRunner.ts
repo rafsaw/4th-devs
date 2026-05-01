@@ -2,13 +2,12 @@ import { randomUUID } from "node:crypto";
 import type { AppConfig } from "./config.js";
 import { BudgetManager } from "./budgetManager.js";
 import { HubClient } from "./hubClient.js";
-import { LocalMockClassifier } from "./localMockClassifier.js";
 import { promptCandidates, renderPrompt } from "./prompting.js";
 import { PromptEngineer } from "./promptEngineer.js";
 import { SessionStateManager } from "./stateManager.js";
 import { TokenEstimator } from "./tokenEstimator.js";
 import { TraceLogger } from "./traceLogger.js";
-import type { CsvItem, ExperimentIteration, Label, Mode, PromptCandidate, SessionState } from "./types.js";
+import type { CsvItem, ExperimentIteration, Label, PromptCandidate, SessionState } from "./types.js";
 
 interface RunnerDeps {
   config: AppConfig;
@@ -80,7 +79,6 @@ function inferHypothesis(iteration: ExperimentIteration): string {
 
 export class ExperimentRunner {
   private readonly tokenEstimator = new TokenEstimator();
-  private readonly localClassifier = new LocalMockClassifier();
   private readonly hubClient: HubClient;
   private readonly promptEngineer: PromptEngineer;
 
@@ -91,10 +89,14 @@ export class ExperimentRunner {
 
   async run(): Promise<void> {
     const runId = randomUUID();
-    // SAFE_LOCAL has no real cost — always start fresh so stale budget_state.json doesn't block runs.
-    const budgetState = this.deps.config.mode === "REMOTE_EXPERIMENT"
-      ? await this.deps.stateManager.loadBudget()
-      : undefined;
+    await this.deps.trace.startRun(runId, {
+      mode: this.deps.config.mode,
+      maxIterations: this.deps.config.maxIterations,
+      tokenLimit: this.deps.config.tokenLimit,
+      budgetLimitPp: this.deps.config.budgetLimitPp,
+      verifyUrl: this.deps.config.verifyUrl
+    });
+    const budgetState = await this.deps.stateManager.loadBudget();
     const budget = new BudgetManager(this.deps.config.budgetLimitPp, budgetState);
     const session: SessionState = {
       runId,
@@ -119,24 +121,36 @@ export class ExperimentRunner {
         "summarize best result"
       ]
     });
+    await this.deps.trace.logStep(runId, "run.started", {
+      session,
+      budgetState
+    });
 
-    // SAFE_LOCAL: load mock items once. REMOTE_EXPERIMENT: fetch fresh CSV every iteration.
-    let csvItems = this.deps.config.mode === "SAFE_LOCAL" ? await this.loadItems("SAFE_LOCAL") : [] as CsvItem[];
+    // Fetch fresh CSV before every remote attempt.
+    let csvItems: CsvItem[] = [];
     let activeCandidate: PromptCandidate = promptCandidates[0];
 
     for (let i = 1; i <= this.deps.config.maxIterations; i += 1) {
       session.currentIteration = i;
       await this.deps.stateManager.saveSession(session);
+      await this.deps.trace.logStep(runId, "iteration.started", {
+        iteration: i,
+        candidateId: activeCandidate.id,
+        promptPrefix: activeCandidate.staticPrefix
+      });
 
-      // Requirement: fetch fresh CSV before each full remote attempt.
-      if (this.deps.config.mode === "REMOTE_EXPERIMENT") {
-        csvItems = await this.loadItems("REMOTE_EXPERIMENT");
-      }
+      // Requirement: fetch fresh CSV before each full attempt.
+      csvItems = await this.loadItems();
+      await this.deps.trace.logStep(runId, "csv.fetched", {
+        iteration: i,
+        itemCount: csvItems.length,
+        ids: csvItems.map((item) => item.id)
+      });
 
       console.log(`\n── Iteration ${i}/${this.deps.config.maxIterations} ─────────────────────────`);
       console.log(`   Prompt [${activeCandidate.id}]: "${activeCandidate.staticPrefix.slice(0, 80)}${activeCandidate.staticPrefix.length > 80 ? "…" : ""}"`);
 
-      const iteration = await this.runIteration(i, csvItems, activeCandidate, budget);
+      const iteration = await this.runIteration(runId, i, csvItems, activeCandidate, budget);
       await this.deps.trace.logExperiment(iteration);
 
       // Score = items the hub accepted (no error, valid DNG/NEU). Hub is the oracle.
@@ -168,13 +182,16 @@ export class ExperimentRunner {
       }
 
       if (iteration.status === "success") {
+        await this.deps.trace.logStep(runId, "prompt.refine.skipped_success", {
+          iteration: i,
+          reason: "Iteration already succeeded; no refinement needed.",
+          candidateId: activeCandidate.id
+        });
         const flag = iteration.results.find((result) => result.verify.flag)?.verify.flag;
         console.log(`\n✓ All items correct!${flag ? ` Flag: ${flag}` : ""}`);
         session.status = "success";
         await this.deps.stateManager.saveSession(session);
-        if (this.deps.config.mode === "REMOTE_EXPERIMENT") {
-          await this.deps.stateManager.saveBudget(budget.getState());
-        }
+        await this.deps.stateManager.saveBudget(budget.getState());
         if (flag) {
           await this.deps.stateManager.saveFlag(flag, {
             runId,
@@ -196,13 +213,46 @@ export class ExperimentRunner {
           score,
           flag
         });
+        await this.deps.trace.logStep(runId, "run.completed", {
+          iteration: i,
+          score,
+          flag,
+          candidateId: activeCandidate.id,
+          spentPp: budget.getState().spentPp
+        });
+        await this.deps.trace.finishRun(runId, {
+          status: "success",
+          finalIteration: i,
+          score,
+          flag,
+          bestScore: session.bestScore,
+          bestCandidateId: session.bestCandidateId,
+          budget: budget.getState()
+        });
         return;
       }
 
       const hypothesis = inferHypothesis(iteration);
       console.log(`   Hypothesis: ${hypothesis}`);
       if (i < this.deps.config.maxIterations) {
+        await this.deps.trace.logStep(runId, "prompt.refine.requested", {
+          iteration: i,
+          fromCandidateId: activeCandidate.id,
+          hypothesis
+        });
         activeCandidate = await this.promptEngineer.refine(activeCandidate, iteration, `auto_${i + 1}`, runId);
+        await this.deps.trace.logStep(runId, "prompt.refine.completed", {
+          iteration: i,
+          toCandidateId: activeCandidate.id,
+          newPrefix: activeCandidate.staticPrefix
+        });
+      } else {
+        await this.deps.trace.logStep(runId, "prompt.refine.skipped_final_iteration", {
+          iteration: i,
+          reason: "Reached MAX_ITERATIONS; no next iteration available.",
+          hypothesis,
+          candidateId: activeCandidate.id
+        });
       }
       await this.deps.trace.logTrace("prompt.refined", {
         runId,
@@ -213,14 +263,16 @@ export class ExperimentRunner {
         newPrefix: activeCandidate.staticPrefix
       });
 
-      if (this.deps.config.mode === "REMOTE_EXPERIMENT") {
-        await this.deps.stateManager.saveBudget(budget.getState());
-      }
+      await this.deps.stateManager.saveBudget(budget.getState());
       if (budget.isExceeded()) {
         session.status = "failed";
         await this.deps.trace.logTrace("run.stopped_budget_exceeded", {
           runId,
           spent: budget.getState().spentPp
+        });
+        await this.deps.trace.logStep(runId, "run.stopped_budget_exceeded", {
+          iteration: i,
+          spentPp: budget.getState().spentPp
         });
         break;
       }
@@ -228,12 +280,24 @@ export class ExperimentRunner {
 
     session.status = "failed";
     await this.deps.stateManager.saveSession(session);
-    if (this.deps.config.mode === "REMOTE_EXPERIMENT") {
-      await this.deps.stateManager.saveBudget(budget.getState());
-    }
+    await this.deps.stateManager.saveBudget(budget.getState());
+    await this.deps.trace.logStep(runId, "run.failed", {
+      finalIteration: session.currentIteration,
+      bestScore: session.bestScore,
+      bestCandidateId: session.bestCandidateId,
+      budget: budget.getState()
+    });
+    await this.deps.trace.finishRun(runId, {
+      status: "failed",
+      finalIteration: session.currentIteration,
+      bestScore: session.bestScore,
+      bestCandidateId: session.bestCandidateId,
+      budget: budget.getState()
+    });
   }
 
   private async runIteration(
+    runId: string,
     iterationNumber: number,
     items: CsvItem[],
     candidate: PromptCandidate,
@@ -265,6 +329,16 @@ export class ExperimentRunner {
 
       const rendered = renderPrompt(candidate, item);
       const estimate = this.tokenEstimator.estimate(rendered.fullPrompt, this.deps.config.tokenLimit);
+      await this.deps.trace.logStep(runId, "prompt.generated", {
+        iteration: iterationNumber,
+        itemId: item.id,
+        itemDescription: item.description,
+        candidateId: candidate.id,
+        fullPrompt: rendered.fullPrompt,
+        staticPrefix: rendered.staticPrefix,
+        dynamicSuffix: rendered.dynamicSuffix,
+        tokenEstimate: estimate
+      });
       if (!estimate.withinLimit) {
         task.status = "rejected";
         task.normalized = "INVALID";
@@ -277,27 +351,54 @@ export class ExperimentRunner {
         });
         iteration.status = "failed";
         iteration.hubError = "Prompt exceeded token limit";
+        await this.deps.trace.logStep(runId, "prompt.rejected_token_limit", {
+          iteration: iterationNumber,
+          itemId: item.id,
+          tokenEstimate: estimate,
+          tokenLimit: this.deps.config.tokenLimit
+        });
         for (let j = idx + 1; j < todo.length; j++) todo[j].status = "skipped";
         break;
       }
 
-      const isRemote = this.deps.config.mode === "REMOTE_EXPERIMENT";
-
-      if (isRemote && !budget.hasBudgetForEstimated(estimate.tokens, 1, Math.max(estimate.tokens - 12, 0))) {
+      if (!budget.hasBudgetForEstimated(estimate.tokens, 1, Math.max(estimate.tokens - 12, 0))) {
         task.status = "skipped";
         iteration.status = "failed";
         iteration.hubError = "Budget guard blocked request before send.";
+        await this.deps.trace.logStep(runId, "request.blocked_budget_guard", {
+          iteration: iterationNumber,
+          itemId: item.id,
+          tokenEstimate: estimate,
+          budgetState: budget.getState()
+        });
         for (let j = idx + 1; j < todo.length; j++) todo[j].status = "skipped";
         break;
       }
 
-      const verify = isRemote
-        ? await this.hubClient.verifyPrompt(rendered.fullPrompt)
-        : this.localClassifier.verify(rendered.fullPrompt);
+      await this.deps.trace.logStep(runId, "verify.request", {
+        iteration: iterationNumber,
+        itemId: item.id,
+        request: {
+          task: "categorize",
+          answer: { prompt: rendered.fullPrompt }
+        }
+      });
+      const verify = await this.hubClient.verifyPrompt(rendered.fullPrompt);
+      await this.deps.trace.logStep(runId, "verify.response", {
+        iteration: iterationNumber,
+        itemId: item.id,
+        response: verify
+      });
 
-      if (isRemote) {
-        budget.recordRequest(estimate.tokens, 1, Math.max(estimate.tokens - 12, 0));
-      }
+      budget.recordRequest(estimate.tokens, 1, Math.max(estimate.tokens - 12, 0));
+      await this.deps.trace.logStep(runId, "budget.recorded_request", {
+        iteration: iterationNumber,
+        itemId: item.id,
+        estimatedInputTokens: estimate.tokens,
+        estimatedOutputTokens: 1,
+        estimatedCachedInputTokens: Math.max(estimate.tokens - 12, 0),
+        budgetState: budget.getState()
+      });
 
       const result = {
         item,
@@ -313,6 +414,12 @@ export class ExperimentRunner {
         task.normalized = "INVALID";
         iteration.status = "failed";
         iteration.hubError = verify.error ?? "INVALID response (could not parse DNG/NEU).";
+        await this.deps.trace.logStep(runId, "verify.invalid_output", {
+          iteration: iterationNumber,
+          itemId: item.id,
+          verify,
+          expected: result.expected
+        });
         for (let j = idx + 1; j < todo.length; j++) todo[j].status = "skipped";
         break;
       }
@@ -323,6 +430,12 @@ export class ExperimentRunner {
         task.normalized = verify.normalized;
         iteration.status = "failed";
         iteration.hubError = verify.error;
+        await this.deps.trace.logStep(runId, "verify.rejected_by_hub", {
+          iteration: iterationNumber,
+          itemId: item.id,
+          verify,
+          expected: result.expected
+        });
         for (let j = idx + 1; j < todo.length; j++) todo[j].status = "skipped";
         break;
       }
@@ -332,6 +445,11 @@ export class ExperimentRunner {
 
       if (verify.flag) {
         iteration.status = "success";
+        await this.deps.trace.logStep(runId, "verify.flag_received", {
+          iteration: iterationNumber,
+          itemId: item.id,
+          flag: verify.flag
+        });
         break;
       }
     }
@@ -347,10 +465,30 @@ export class ExperimentRunner {
       iterationId: iteration.id,
       todo
     });
+    await this.deps.trace.logStep(runId, "iteration.completed", {
+      iterationId: iteration.id,
+      iteration: iterationNumber,
+      status: iteration.status,
+      candidateId: candidate.id,
+      hubError: iteration.hubError,
+      hypothesisForNextRevision: iteration.hypothesisForNextRevision,
+      todo,
+      results: iteration.results
+    });
 
-    if (iteration.status === "failed" && this.deps.config.mode === "REMOTE_EXPERIMENT") {
+    if (iteration.status === "failed") {
+      await this.deps.trace.logStep(runId, "hub.reset.request", {
+        iteration: iterationNumber,
+        iterationId: iteration.id
+      });
       const resetResponse = await this.hubClient.reset();
       budget.recordReset(1, 1);
+      await this.deps.trace.logStep(runId, "hub.reset.response", {
+        iteration: iterationNumber,
+        iterationId: iteration.id,
+        response: resetResponse,
+        budgetState: budget.getState()
+      });
       await this.deps.trace.logTrace("hub.reset", {
         iterationId: iteration.id,
         rawResponse: resetResponse.rawResponse
@@ -360,22 +498,7 @@ export class ExperimentRunner {
     return iteration;
   }
 
-  private async loadItems(mode: Mode): Promise<CsvItem[]> {
-    if (mode === "SAFE_LOCAL") {
-      return [
-        { id: "1", description: "Office chairs", raw: { id: "1", description: "Office chairs" } },
-        { id: "2", description: "Flammable paint thinner", raw: { id: "2", description: "Flammable paint thinner" } },
-        { id: "3", description: "Reactor cooling module", raw: { id: "3", description: "Reactor cooling module" } },
-        { id: "4", description: "Ceramic mugs", raw: { id: "4", description: "Ceramic mugs" } },
-        { id: "5", description: "Corrosive acid cleaner", raw: { id: "5", description: "Corrosive acid cleaner" } },
-        { id: "6", description: "Cotton t-shirts", raw: { id: "6", description: "Cotton t-shirts" } },
-        { id: "7", description: "Biohazard sample container", raw: { id: "7", description: "Biohazard sample container" } },
-        { id: "8", description: "Laptop stands", raw: { id: "8", description: "Laptop stands" } },
-        { id: "9", description: "Fuel rod transport case", raw: { id: "9", description: "Fuel rod transport case" } },
-        { id: "10", description: "Paper notebooks", raw: { id: "10", description: "Paper notebooks" } }
-      ];
-    }
-
+  private async loadItems(): Promise<CsvItem[]> {
     return this.hubClient.fetchFreshCsv();
   }
 }
