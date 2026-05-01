@@ -1,0 +1,1312 @@
+{
+  "runId": "bf4756ae-a430-4e49-9003-1ca4199a34d6",
+  "startedAt": "2026-05-01T02:26:06.074Z",
+  "updatedAt": "2026-05-01T02:26:18.312Z",
+  "meta": {
+    "mode": "REMOTE_EXPERIMENT",
+    "maxIterations": 8,
+    "tokenLimit": 100,
+    "budgetLimitPp": 1.5,
+    "verifyUrl": "https://hub.ag3nts.org/verify",
+    "resumeBudgetState": false
+  },
+  "steps": [
+    {
+      "at": "2026-05-01T02:26:06.078Z",
+      "step": "run.started",
+      "payload": {
+        "session": {
+          "runId": "bf4756ae-a430-4e49-9003-1ca4199a34d6",
+          "mode": "REMOTE_EXPERIMENT",
+          "startedAt": "2026-05-01T02:26:06.076Z",
+          "currentIteration": 1,
+          "bestScore": 10,
+          "status": "success",
+          "bestCandidateId": "auto_bootstrap_1"
+        },
+        "budgetState": {
+          "spentPp": 0,
+          "inputTokens": 0,
+          "cachedInputTokens": 0,
+          "outputTokens": 0,
+          "requests": 0,
+          "resets": 0
+        }
+      }
+    },
+    {
+      "at": "2026-05-01T02:26:06.082Z",
+      "step": "hub.reset.pre_run.request",
+      "payload": {
+        "runId": "bf4756ae-a430-4e49-9003-1ca4199a34d6",
+        "reason": "Ensure clean hub state for a new run."
+      }
+    },
+    {
+      "at": "2026-05-01T02:26:06.598Z",
+      "step": "hub.reset.pre_run.response",
+      "payload": {
+        "runId": "bf4756ae-a430-4e49-9003-1ca4199a34d6",
+        "response": {
+          "rawResponse": "{\n    \"code\": 2,\n    \"message\": \"Balance renewed.\",\n    \"tokens\": 0,\n    \"cached_tokens\": 0,\n    \"input_cost\": 0,\n    \"output_cost\": 0,\n    \"balance\": 1.5,\n    \"global_cache_hit_rate\": 0\n}",
+          "normalized": "INVALID",
+          "error": "Balance renewed.",
+          "usage": {
+            "tokens": 0,
+            "cachedTokens": 0,
+            "inputCostPp": 0,
+            "outputCostPp": 0,
+            "balance": 1.5
+          }
+        },
+        "budgetState": {
+          "spentPp": 0,
+          "inputTokens": 0,
+          "cachedInputTokens": 0,
+          "outputTokens": 0,
+          "requests": 0,
+          "resets": 1
+        }
+      }
+    },
+    {
+      "at": "2026-05-01T02:26:06.613Z",
+      "step": "prompt.refine.bootstrap_requested",
+      "payload": {
+        "candidateId": "p1_empty",
+        "staticPrefix": "",
+        "reason": "Initial staticPrefix is empty/placeholder."
+      }
+    },
+    {
+      "at": "2026-05-01T02:26:08.699Z",
+      "step": "prompt.refine.bootstrap_completed",
+      "payload": {
+        "toCandidateId": "auto_bootstrap_1",
+        "newPrefix": "Reply DNG if dangerous (explosive,flammable,corrosive,toxic,radioactive,weapon,biohazard), else NEU. Exception: \"reactor\",\"fuel rod\",\"fuel cassette\"=always NEU. Output only DNG or NEU."
+      }
+    },
+    {
+      "at": "2026-05-01T02:26:08.700Z",
+      "step": "iteration.started",
+      "payload": {
+        "iteration": 1,
+        "candidateId": "auto_bootstrap_1",
+        "promptPrefix": "Reply DNG if dangerous (explosive,flammable,corrosive,toxic,radioactive,weapon,biohazard), else NEU. Exception: \"reactor\",\"fuel rod\",\"fuel cassette\"=always NEU. Output only DNG or NEU."
+      }
+    },
+    {
+      "at": "2026-05-01T02:26:08.890Z",
+      "step": "csv.fetched",
+      "payload": {
+        "iteration": 1,
+        "itemCount": 10,
+        "ids": [
+          "i5683",
+          "i7628",
+          "i8827",
+          "i4796",
+          "i4668",
+          "i7391",
+          "i4077",
+          "i2891",
+          "i0385",
+          "i6742"
+        ]
+      }
+    },
+    {
+      "at": "2026-05-01T02:26:08.901Z",
+      "step": "prompt.generated",
+      "payload": {
+        "iteration": 1,
+        "itemId": "i5683",
+        "itemDescription": "Bag of stainless steel bolts, nuts, and washers in metric sizes",
+        "candidateId": "auto_bootstrap_1",
+        "fullPrompt": "Reply DNG if dangerous (explosive,flammable,corrosive,toxic,radioactive,weapon,biohazard), else NEU. Exception: \"reactor\",\"fuel rod\",\"fuel cassette\"=always NEU. Output only DNG or NEU.\nItem i5683: Bag of stainless steel bolts, nuts, and washers in metric sizes",
+        "staticPrefix": "Reply DNG if dangerous (explosive,flammable,corrosive,toxic,radioactive,weapon,biohazard), else NEU. Exception: \"reactor\",\"fuel rod\",\"fuel cassette\"=always NEU. Output only DNG or NEU.",
+        "dynamicSuffix": "Item i5683: Bag of stainless steel bolts, nuts, and washers in metric sizes",
+        "tokenEstimate": {
+          "tokens": 74,
+          "limit": 100,
+          "withinLimit": true
+        }
+      }
+    },
+    {
+      "at": "2026-05-01T02:26:08.906Z",
+      "step": "verify.request",
+      "payload": {
+        "iteration": 1,
+        "itemId": "i5683",
+        "request": {
+          "task": "categorize",
+          "answer": {
+            "prompt": "Reply DNG if dangerous (explosive,flammable,corrosive,toxic,radioactive,weapon,biohazard), else NEU. Exception: \"reactor\",\"fuel rod\",\"fuel cassette\"=always NEU. Output only DNG or NEU.\nItem i5683: Bag of stainless steel bolts, nuts, and washers in metric sizes"
+          }
+        }
+      }
+    },
+    {
+      "at": "2026-05-01T02:26:09.819Z",
+      "step": "verify.response",
+      "payload": {
+        "iteration": 1,
+        "itemId": "i5683",
+        "response": {
+          "rawResponse": "{\n    \"code\": 1,\n    \"message\": \"ACCEPTED\",\n    \"debug\": {\n        \"output\": \"NEU\",\n        \"tokens\": 79,\n        \"cached_tokens\": 0,\n        \"input_cost\": 0.158,\n        \"output_cost\": 0.004,\n        \"balance\": 1.338,\n        \"result\": \"correct classification\",\n        \"classified_items\": 1,\n        \"required_items\": 10,\n        \"global_cache_hit_rate\": 0,\n        \"global_cache_total_tokens\": 79,\n        \"global_cache_cached_tokens\": 0\n    }\n}",
+          "normalized": "NEU",
+          "usage": {
+            "tokens": 79,
+            "cachedTokens": 0,
+            "inputCostPp": 0.158,
+            "outputCostPp": 0.004,
+            "balance": 1.338
+          }
+        }
+      }
+    },
+    {
+      "at": "2026-05-01T02:26:09.822Z",
+      "step": "budget.recorded_request",
+      "payload": {
+        "iteration": 1,
+        "itemId": "i5683",
+        "estimatedInputTokens": 74,
+        "estimatedOutputTokens": 1,
+        "estimatedCachedInputTokens": 62,
+        "usedHubUsage": true,
+        "hubUsage": {
+          "tokens": 79,
+          "cachedTokens": 0,
+          "inputCostPp": 0.158,
+          "outputCostPp": 0.004,
+          "balance": 1.338
+        },
+        "budgetState": {
+          "spentPp": 0.162,
+          "inputTokens": 79,
+          "cachedInputTokens": 0,
+          "outputTokens": 1,
+          "requests": 1,
+          "resets": 1
+        }
+      }
+    },
+    {
+      "at": "2026-05-01T02:26:09.829Z",
+      "step": "prompt.generated",
+      "payload": {
+        "iteration": 1,
+        "itemId": "i7628",
+        "itemDescription": "Transformer core from a substation, weighs about 90 kilograms",
+        "candidateId": "auto_bootstrap_1",
+        "fullPrompt": "Reply DNG if dangerous (explosive,flammable,corrosive,toxic,radioactive,weapon,biohazard), else NEU. Exception: \"reactor\",\"fuel rod\",\"fuel cassette\"=always NEU. Output only DNG or NEU.\nItem i7628: Transformer core from a substation, weighs about 90 kilograms",
+        "staticPrefix": "Reply DNG if dangerous (explosive,flammable,corrosive,toxic,radioactive,weapon,biohazard), else NEU. Exception: \"reactor\",\"fuel rod\",\"fuel cassette\"=always NEU. Output only DNG or NEU.",
+        "dynamicSuffix": "Item i7628: Transformer core from a substation, weighs about 90 kilograms",
+        "tokenEstimate": {
+          "tokens": 73,
+          "limit": 100,
+          "withinLimit": true
+        }
+      }
+    },
+    {
+      "at": "2026-05-01T02:26:09.834Z",
+      "step": "verify.request",
+      "payload": {
+        "iteration": 1,
+        "itemId": "i7628",
+        "request": {
+          "task": "categorize",
+          "answer": {
+            "prompt": "Reply DNG if dangerous (explosive,flammable,corrosive,toxic,radioactive,weapon,biohazard), else NEU. Exception: \"reactor\",\"fuel rod\",\"fuel cassette\"=always NEU. Output only DNG or NEU.\nItem i7628: Transformer core from a substation, weighs about 90 kilograms"
+          }
+        }
+      }
+    },
+    {
+      "at": "2026-05-01T02:26:10.479Z",
+      "step": "verify.response",
+      "payload": {
+        "iteration": 1,
+        "itemId": "i7628",
+        "response": {
+          "rawResponse": "{\n    \"code\": 1,\n    \"message\": \"ACCEPTED\",\n    \"debug\": {\n        \"output\": \"NEU\",\n        \"tokens\": 77,\n        \"cached_tokens\": 62,\n        \"input_cost\": 0.092,\n        \"output_cost\": 0.004,\n        \"balance\": 1.242,\n        \"result\": \"correct classification\",\n        \"classified_items\": 2,\n        \"required_items\": 10,\n        \"global_cache_hit_rate\": 39.74,\n        \"global_cache_total_tokens\": 156,\n        \"global_cache_cached_tokens\": 62\n    }\n}",
+          "normalized": "NEU",
+          "usage": {
+            "tokens": 77,
+            "cachedTokens": 62,
+            "inputCostPp": 0.092,
+            "outputCostPp": 0.004,
+            "balance": 1.242
+          }
+        }
+      }
+    },
+    {
+      "at": "2026-05-01T02:26:10.480Z",
+      "step": "budget.recorded_request",
+      "payload": {
+        "iteration": 1,
+        "itemId": "i7628",
+        "estimatedInputTokens": 73,
+        "estimatedOutputTokens": 1,
+        "estimatedCachedInputTokens": 61,
+        "usedHubUsage": true,
+        "hubUsage": {
+          "tokens": 77,
+          "cachedTokens": 62,
+          "inputCostPp": 0.092,
+          "outputCostPp": 0.004,
+          "balance": 1.242
+        },
+        "budgetState": {
+          "spentPp": 0.258,
+          "inputTokens": 156,
+          "cachedInputTokens": 62,
+          "outputTokens": 2,
+          "requests": 2,
+          "resets": 1
+        }
+      }
+    },
+    {
+      "at": "2026-05-01T02:26:10.485Z",
+      "step": "prompt.generated",
+      "payload": {
+        "iteration": 1,
+        "itemId": "i8827",
+        "itemDescription": "Stun baton with cracked insulation and exposed wiring",
+        "candidateId": "auto_bootstrap_1",
+        "fullPrompt": "Reply DNG if dangerous (explosive,flammable,corrosive,toxic,radioactive,weapon,biohazard), else NEU. Exception: \"reactor\",\"fuel rod\",\"fuel cassette\"=always NEU. Output only DNG or NEU.\nItem i8827: Stun baton with cracked insulation and exposed wiring",
+        "staticPrefix": "Reply DNG if dangerous (explosive,flammable,corrosive,toxic,radioactive,weapon,biohazard), else NEU. Exception: \"reactor\",\"fuel rod\",\"fuel cassette\"=always NEU. Output only DNG or NEU.",
+        "dynamicSuffix": "Item i8827: Stun baton with cracked insulation and exposed wiring",
+        "tokenEstimate": {
+          "tokens": 70,
+          "limit": 100,
+          "withinLimit": true
+        }
+      }
+    },
+    {
+      "at": "2026-05-01T02:26:10.490Z",
+      "step": "verify.request",
+      "payload": {
+        "iteration": 1,
+        "itemId": "i8827",
+        "request": {
+          "task": "categorize",
+          "answer": {
+            "prompt": "Reply DNG if dangerous (explosive,flammable,corrosive,toxic,radioactive,weapon,biohazard), else NEU. Exception: \"reactor\",\"fuel rod\",\"fuel cassette\"=always NEU. Output only DNG or NEU.\nItem i8827: Stun baton with cracked insulation and exposed wiring"
+          }
+        }
+      }
+    },
+    {
+      "at": "2026-05-01T02:26:11.548Z",
+      "step": "verify.response",
+      "payload": {
+        "iteration": 1,
+        "itemId": "i8827",
+        "response": {
+          "rawResponse": "{\n    \"code\": 1,\n    \"message\": \"ACCEPTED\",\n    \"debug\": {\n        \"output\": \"DNG\",\n        \"tokens\": 74,\n        \"cached_tokens\": 62,\n        \"input_cost\": 0.086,\n        \"output_cost\": 0.004,\n        \"balance\": 1.152,\n        \"result\": \"correct classification\",\n        \"classified_items\": 3,\n        \"required_items\": 10,\n        \"global_cache_hit_rate\": 53.91,\n        \"global_cache_total_tokens\": 230,\n        \"global_cache_cached_tokens\": 124\n    }\n}",
+          "normalized": "DNG",
+          "usage": {
+            "tokens": 74,
+            "cachedTokens": 62,
+            "inputCostPp": 0.086,
+            "outputCostPp": 0.004,
+            "balance": 1.152
+          }
+        }
+      }
+    },
+    {
+      "at": "2026-05-01T02:26:11.549Z",
+      "step": "budget.recorded_request",
+      "payload": {
+        "iteration": 1,
+        "itemId": "i8827",
+        "estimatedInputTokens": 70,
+        "estimatedOutputTokens": 1,
+        "estimatedCachedInputTokens": 58,
+        "usedHubUsage": true,
+        "hubUsage": {
+          "tokens": 74,
+          "cachedTokens": 62,
+          "inputCostPp": 0.086,
+          "outputCostPp": 0.004,
+          "balance": 1.152
+        },
+        "budgetState": {
+          "spentPp": 0.348,
+          "inputTokens": 230,
+          "cachedInputTokens": 124,
+          "outputTokens": 3,
+          "requests": 3,
+          "resets": 1
+        }
+      }
+    },
+    {
+      "at": "2026-05-01T02:26:11.550Z",
+      "step": "prompt.generated",
+      "payload": {
+        "iteration": 1,
+        "itemId": "i4796",
+        "itemDescription": "Reactor fuel cassette stored in regulation shielding canister, fully certified",
+        "candidateId": "auto_bootstrap_1",
+        "fullPrompt": "Reply DNG if dangerous (explosive,flammable,corrosive,toxic,radioactive,weapon,biohazard), else NEU. Exception: \"reactor\",\"fuel rod\",\"fuel cassette\"=always NEU. Output only DNG or NEU.\nItem i4796: Reactor fuel cassette stored in regulation shielding canister, fully certified",
+        "staticPrefix": "Reply DNG if dangerous (explosive,flammable,corrosive,toxic,radioactive,weapon,biohazard), else NEU. Exception: \"reactor\",\"fuel rod\",\"fuel cassette\"=always NEU. Output only DNG or NEU.",
+        "dynamicSuffix": "Item i4796: Reactor fuel cassette stored in regulation shielding canister, fully certified",
+        "tokenEstimate": {
+          "tokens": 73,
+          "limit": 100,
+          "withinLimit": true
+        }
+      }
+    },
+    {
+      "at": "2026-05-01T02:26:11.556Z",
+      "step": "verify.request",
+      "payload": {
+        "iteration": 1,
+        "itemId": "i4796",
+        "request": {
+          "task": "categorize",
+          "answer": {
+            "prompt": "Reply DNG if dangerous (explosive,flammable,corrosive,toxic,radioactive,weapon,biohazard), else NEU. Exception: \"reactor\",\"fuel rod\",\"fuel cassette\"=always NEU. Output only DNG or NEU.\nItem i4796: Reactor fuel cassette stored in regulation shielding canister, fully certified"
+          }
+        }
+      }
+    },
+    {
+      "at": "2026-05-01T02:26:12.379Z",
+      "step": "verify.response",
+      "payload": {
+        "iteration": 1,
+        "itemId": "i4796",
+        "response": {
+          "rawResponse": "{\n    \"code\": 1,\n    \"message\": \"ACCEPTED\",\n    \"debug\": {\n        \"output\": \"NEU\",\n        \"tokens\": 78,\n        \"cached_tokens\": 62,\n        \"input_cost\": 0.094,\n        \"output_cost\": 0.004,\n        \"balance\": 1.054,\n        \"result\": \"correct classification\",\n        \"classified_items\": 4,\n        \"required_items\": 10,\n        \"global_cache_hit_rate\": 60.39,\n        \"global_cache_total_tokens\": 308,\n        \"global_cache_cached_tokens\": 186\n    }\n}",
+          "normalized": "NEU",
+          "usage": {
+            "tokens": 78,
+            "cachedTokens": 62,
+            "inputCostPp": 0.094,
+            "outputCostPp": 0.004,
+            "balance": 1.054
+          }
+        }
+      }
+    },
+    {
+      "at": "2026-05-01T02:26:12.380Z",
+      "step": "budget.recorded_request",
+      "payload": {
+        "iteration": 1,
+        "itemId": "i4796",
+        "estimatedInputTokens": 73,
+        "estimatedOutputTokens": 1,
+        "estimatedCachedInputTokens": 61,
+        "usedHubUsage": true,
+        "hubUsage": {
+          "tokens": 78,
+          "cachedTokens": 62,
+          "inputCostPp": 0.094,
+          "outputCostPp": 0.004,
+          "balance": 1.054
+        },
+        "budgetState": {
+          "spentPp": 0.44599999999999995,
+          "inputTokens": 308,
+          "cachedInputTokens": 186,
+          "outputTokens": 4,
+          "requests": 4,
+          "resets": 1
+        }
+      }
+    },
+    {
+      "at": "2026-05-01T02:26:12.382Z",
+      "step": "prompt.generated",
+      "payload": {
+        "iteration": 1,
+        "itemId": "i4668",
+        "itemDescription": "Functional flamethrower with pressurized fuel canister and ignition system",
+        "candidateId": "auto_bootstrap_1",
+        "fullPrompt": "Reply DNG if dangerous (explosive,flammable,corrosive,toxic,radioactive,weapon,biohazard), else NEU. Exception: \"reactor\",\"fuel rod\",\"fuel cassette\"=always NEU. Output only DNG or NEU.\nItem i4668: Functional flamethrower with pressurized fuel canister and ignition system",
+        "staticPrefix": "Reply DNG if dangerous (explosive,flammable,corrosive,toxic,radioactive,weapon,biohazard), else NEU. Exception: \"reactor\",\"fuel rod\",\"fuel cassette\"=always NEU. Output only DNG or NEU.",
+        "dynamicSuffix": "Item i4668: Functional flamethrower with pressurized fuel canister and ignition system",
+        "tokenEstimate": {
+          "tokens": 75,
+          "limit": 100,
+          "withinLimit": true
+        }
+      }
+    },
+    {
+      "at": "2026-05-01T02:26:12.397Z",
+      "step": "verify.request",
+      "payload": {
+        "iteration": 1,
+        "itemId": "i4668",
+        "request": {
+          "task": "categorize",
+          "answer": {
+            "prompt": "Reply DNG if dangerous (explosive,flammable,corrosive,toxic,radioactive,weapon,biohazard), else NEU. Exception: \"reactor\",\"fuel rod\",\"fuel cassette\"=always NEU. Output only DNG or NEU.\nItem i4668: Functional flamethrower with pressurized fuel canister and ignition system"
+          }
+        }
+      }
+    },
+    {
+      "at": "2026-05-01T02:26:12.924Z",
+      "step": "verify.response",
+      "payload": {
+        "iteration": 1,
+        "itemId": "i4668",
+        "response": {
+          "rawResponse": "{\n    \"code\": 1,\n    \"message\": \"ACCEPTED\",\n    \"debug\": {\n        \"output\": \"DNG\",\n        \"tokens\": 79,\n        \"cached_tokens\": 62,\n        \"input_cost\": 0.096,\n        \"output_cost\": 0.004,\n        \"balance\": 0.954,\n        \"result\": \"correct classification\",\n        \"classified_items\": 5,\n        \"required_items\": 10,\n        \"global_cache_hit_rate\": 64.08,\n        \"global_cache_total_tokens\": 387,\n        \"global_cache_cached_tokens\": 248\n    }\n}",
+          "normalized": "DNG",
+          "usage": {
+            "tokens": 79,
+            "cachedTokens": 62,
+            "inputCostPp": 0.096,
+            "outputCostPp": 0.004,
+            "balance": 0.954
+          }
+        }
+      }
+    },
+    {
+      "at": "2026-05-01T02:26:12.925Z",
+      "step": "budget.recorded_request",
+      "payload": {
+        "iteration": 1,
+        "itemId": "i4668",
+        "estimatedInputTokens": 75,
+        "estimatedOutputTokens": 1,
+        "estimatedCachedInputTokens": 63,
+        "usedHubUsage": true,
+        "hubUsage": {
+          "tokens": 79,
+          "cachedTokens": 62,
+          "inputCostPp": 0.096,
+          "outputCostPp": 0.004,
+          "balance": 0.954
+        },
+        "budgetState": {
+          "spentPp": 0.5459999999999999,
+          "inputTokens": 387,
+          "cachedInputTokens": 248,
+          "outputTokens": 5,
+          "requests": 5,
+          "resets": 1
+        }
+      }
+    },
+    {
+      "at": "2026-05-01T02:26:12.926Z",
+      "step": "prompt.generated",
+      "payload": {
+        "iteration": 1,
+        "itemId": "i7391",
+        "itemDescription": "Reactor fuel cassette containing enriched uranium pellets for portable nuclear power units",
+        "candidateId": "auto_bootstrap_1",
+        "fullPrompt": "Reply DNG if dangerous (explosive,flammable,corrosive,toxic,radioactive,weapon,biohazard), else NEU. Exception: \"reactor\",\"fuel rod\",\"fuel cassette\"=always NEU. Output only DNG or NEU.\nItem i7391: Reactor fuel cassette containing enriched uranium pellets for portable nuclear power units",
+        "staticPrefix": "Reply DNG if dangerous (explosive,flammable,corrosive,toxic,radioactive,weapon,biohazard), else NEU. Exception: \"reactor\",\"fuel rod\",\"fuel cassette\"=always NEU. Output only DNG or NEU.",
+        "dynamicSuffix": "Item i7391: Reactor fuel cassette containing enriched uranium pellets for portable nuclear power units",
+        "tokenEstimate": {
+          "tokens": 73,
+          "limit": 100,
+          "withinLimit": true
+        }
+      }
+    },
+    {
+      "at": "2026-05-01T02:26:12.932Z",
+      "step": "verify.request",
+      "payload": {
+        "iteration": 1,
+        "itemId": "i7391",
+        "request": {
+          "task": "categorize",
+          "answer": {
+            "prompt": "Reply DNG if dangerous (explosive,flammable,corrosive,toxic,radioactive,weapon,biohazard), else NEU. Exception: \"reactor\",\"fuel rod\",\"fuel cassette\"=always NEU. Output only DNG or NEU.\nItem i7391: Reactor fuel cassette containing enriched uranium pellets for portable nuclear power units"
+          }
+        }
+      }
+    },
+    {
+      "at": "2026-05-01T02:26:13.984Z",
+      "step": "verify.response",
+      "payload": {
+        "iteration": 1,
+        "itemId": "i7391",
+        "response": {
+          "rawResponse": "{\n    \"code\": 1,\n    \"message\": \"ACCEPTED\",\n    \"debug\": {\n        \"output\": \"NEU\",\n        \"tokens\": 78,\n        \"cached_tokens\": 62,\n        \"input_cost\": 0.094,\n        \"output_cost\": 0.004,\n        \"balance\": 0.856,\n        \"result\": \"correct classification\",\n        \"classified_items\": 6,\n        \"required_items\": 10,\n        \"global_cache_hit_rate\": 66.67,\n        \"global_cache_total_tokens\": 465,\n        \"global_cache_cached_tokens\": 310\n    }\n}",
+          "normalized": "NEU",
+          "usage": {
+            "tokens": 78,
+            "cachedTokens": 62,
+            "inputCostPp": 0.094,
+            "outputCostPp": 0.004,
+            "balance": 0.856
+          }
+        }
+      }
+    },
+    {
+      "at": "2026-05-01T02:26:13.985Z",
+      "step": "budget.recorded_request",
+      "payload": {
+        "iteration": 1,
+        "itemId": "i7391",
+        "estimatedInputTokens": 73,
+        "estimatedOutputTokens": 1,
+        "estimatedCachedInputTokens": 61,
+        "usedHubUsage": true,
+        "hubUsage": {
+          "tokens": 78,
+          "cachedTokens": 62,
+          "inputCostPp": 0.094,
+          "outputCostPp": 0.004,
+          "balance": 0.856
+        },
+        "budgetState": {
+          "spentPp": 0.6439999999999999,
+          "inputTokens": 465,
+          "cachedInputTokens": 310,
+          "outputTokens": 6,
+          "requests": 6,
+          "resets": 1
+        }
+      }
+    },
+    {
+      "at": "2026-05-01T02:26:13.986Z",
+      "step": "prompt.generated",
+      "payload": {
+        "iteration": 1,
+        "itemId": "i4077",
+        "itemDescription": "Compact submachine gun frame missing the magazine",
+        "candidateId": "auto_bootstrap_1",
+        "fullPrompt": "Reply DNG if dangerous (explosive,flammable,corrosive,toxic,radioactive,weapon,biohazard), else NEU. Exception: \"reactor\",\"fuel rod\",\"fuel cassette\"=always NEU. Output only DNG or NEU.\nItem i4077: Compact submachine gun frame missing the magazine",
+        "staticPrefix": "Reply DNG if dangerous (explosive,flammable,corrosive,toxic,radioactive,weapon,biohazard), else NEU. Exception: \"reactor\",\"fuel rod\",\"fuel cassette\"=always NEU. Output only DNG or NEU.",
+        "dynamicSuffix": "Item i4077: Compact submachine gun frame missing the magazine",
+        "tokenEstimate": {
+          "tokens": 69,
+          "limit": 100,
+          "withinLimit": true
+        }
+      }
+    },
+    {
+      "at": "2026-05-01T02:26:13.991Z",
+      "step": "verify.request",
+      "payload": {
+        "iteration": 1,
+        "itemId": "i4077",
+        "request": {
+          "task": "categorize",
+          "answer": {
+            "prompt": "Reply DNG if dangerous (explosive,flammable,corrosive,toxic,radioactive,weapon,biohazard), else NEU. Exception: \"reactor\",\"fuel rod\",\"fuel cassette\"=always NEU. Output only DNG or NEU.\nItem i4077: Compact submachine gun frame missing the magazine"
+          }
+        }
+      }
+    },
+    {
+      "at": "2026-05-01T02:26:15.323Z",
+      "step": "verify.response",
+      "payload": {
+        "iteration": 1,
+        "itemId": "i4077",
+        "response": {
+          "rawResponse": "{\n    \"code\": 1,\n    \"message\": \"ACCEPTED\",\n    \"debug\": {\n        \"output\": \"DNG\",\n        \"tokens\": 73,\n        \"cached_tokens\": 62,\n        \"input_cost\": 0.084,\n        \"output_cost\": 0.004,\n        \"balance\": 0.768,\n        \"result\": \"correct classification\",\n        \"classified_items\": 7,\n        \"required_items\": 10,\n        \"global_cache_hit_rate\": 69.14,\n        \"global_cache_total_tokens\": 538,\n        \"global_cache_cached_tokens\": 372\n    }\n}",
+          "normalized": "DNG",
+          "usage": {
+            "tokens": 73,
+            "cachedTokens": 62,
+            "inputCostPp": 0.084,
+            "outputCostPp": 0.004,
+            "balance": 0.768
+          }
+        }
+      }
+    },
+    {
+      "at": "2026-05-01T02:26:15.323Z",
+      "step": "budget.recorded_request",
+      "payload": {
+        "iteration": 1,
+        "itemId": "i4077",
+        "estimatedInputTokens": 69,
+        "estimatedOutputTokens": 1,
+        "estimatedCachedInputTokens": 57,
+        "usedHubUsage": true,
+        "hubUsage": {
+          "tokens": 73,
+          "cachedTokens": 62,
+          "inputCostPp": 0.084,
+          "outputCostPp": 0.004,
+          "balance": 0.768
+        },
+        "budgetState": {
+          "spentPp": 0.7319999999999999,
+          "inputTokens": 538,
+          "cachedInputTokens": 372,
+          "outputTokens": 7,
+          "requests": 7,
+          "resets": 1
+        }
+      }
+    },
+    {
+      "at": "2026-05-01T02:26:15.325Z",
+      "step": "prompt.generated",
+      "payload": {
+        "iteration": 1,
+        "itemId": "i2891",
+        "itemDescription": "Handful of ceramic capacitors and resistors in an old tobacco tin",
+        "candidateId": "auto_bootstrap_1",
+        "fullPrompt": "Reply DNG if dangerous (explosive,flammable,corrosive,toxic,radioactive,weapon,biohazard), else NEU. Exception: \"reactor\",\"fuel rod\",\"fuel cassette\"=always NEU. Output only DNG or NEU.\nItem i2891: Handful of ceramic capacitors and resistors in an old tobacco tin",
+        "staticPrefix": "Reply DNG if dangerous (explosive,flammable,corrosive,toxic,radioactive,weapon,biohazard), else NEU. Exception: \"reactor\",\"fuel rod\",\"fuel cassette\"=always NEU. Output only DNG or NEU.",
+        "dynamicSuffix": "Item i2891: Handful of ceramic capacitors and resistors in an old tobacco tin",
+        "tokenEstimate": {
+          "tokens": 75,
+          "limit": 100,
+          "withinLimit": true
+        }
+      }
+    },
+    {
+      "at": "2026-05-01T02:26:15.330Z",
+      "step": "verify.request",
+      "payload": {
+        "iteration": 1,
+        "itemId": "i2891",
+        "request": {
+          "task": "categorize",
+          "answer": {
+            "prompt": "Reply DNG if dangerous (explosive,flammable,corrosive,toxic,radioactive,weapon,biohazard), else NEU. Exception: \"reactor\",\"fuel rod\",\"fuel cassette\"=always NEU. Output only DNG or NEU.\nItem i2891: Handful of ceramic capacitors and resistors in an old tobacco tin"
+          }
+        }
+      }
+    },
+    {
+      "at": "2026-05-01T02:26:15.919Z",
+      "step": "verify.response",
+      "payload": {
+        "iteration": 1,
+        "itemId": "i2891",
+        "response": {
+          "rawResponse": "{\n    \"code\": 1,\n    \"message\": \"ACCEPTED\",\n    \"debug\": {\n        \"output\": \"NEU\",\n        \"tokens\": 79,\n        \"cached_tokens\": 62,\n        \"input_cost\": 0.096,\n        \"output_cost\": 0.004,\n        \"balance\": 0.668,\n        \"result\": \"correct classification\",\n        \"classified_items\": 8,\n        \"required_items\": 10,\n        \"global_cache_hit_rate\": 70.34,\n        \"global_cache_total_tokens\": 617,\n        \"global_cache_cached_tokens\": 434\n    }\n}",
+          "normalized": "NEU",
+          "usage": {
+            "tokens": 79,
+            "cachedTokens": 62,
+            "inputCostPp": 0.096,
+            "outputCostPp": 0.004,
+            "balance": 0.668
+          }
+        }
+      }
+    },
+    {
+      "at": "2026-05-01T02:26:15.920Z",
+      "step": "budget.recorded_request",
+      "payload": {
+        "iteration": 1,
+        "itemId": "i2891",
+        "estimatedInputTokens": 75,
+        "estimatedOutputTokens": 1,
+        "estimatedCachedInputTokens": 63,
+        "usedHubUsage": true,
+        "hubUsage": {
+          "tokens": 79,
+          "cachedTokens": 62,
+          "inputCostPp": 0.096,
+          "outputCostPp": 0.004,
+          "balance": 0.668
+        },
+        "budgetState": {
+          "spentPp": 0.8319999999999999,
+          "inputTokens": 617,
+          "cachedInputTokens": 434,
+          "outputTokens": 8,
+          "requests": 8,
+          "resets": 1
+        }
+      }
+    },
+    {
+      "at": "2026-05-01T02:26:15.921Z",
+      "step": "prompt.generated",
+      "payload": {
+        "iteration": 1,
+        "itemId": "i0385",
+        "itemDescription": "Circuit board collection from scrapped radio transceivers",
+        "candidateId": "auto_bootstrap_1",
+        "fullPrompt": "Reply DNG if dangerous (explosive,flammable,corrosive,toxic,radioactive,weapon,biohazard), else NEU. Exception: \"reactor\",\"fuel rod\",\"fuel cassette\"=always NEU. Output only DNG or NEU.\nItem i0385: Circuit board collection from scrapped radio transceivers",
+        "staticPrefix": "Reply DNG if dangerous (explosive,flammable,corrosive,toxic,radioactive,weapon,biohazard), else NEU. Exception: \"reactor\",\"fuel rod\",\"fuel cassette\"=always NEU. Output only DNG or NEU.",
+        "dynamicSuffix": "Item i0385: Circuit board collection from scrapped radio transceivers",
+        "tokenEstimate": {
+          "tokens": 71,
+          "limit": 100,
+          "withinLimit": true
+        }
+      }
+    },
+    {
+      "at": "2026-05-01T02:26:15.926Z",
+      "step": "verify.request",
+      "payload": {
+        "iteration": 1,
+        "itemId": "i0385",
+        "request": {
+          "task": "categorize",
+          "answer": {
+            "prompt": "Reply DNG if dangerous (explosive,flammable,corrosive,toxic,radioactive,weapon,biohazard), else NEU. Exception: \"reactor\",\"fuel rod\",\"fuel cassette\"=always NEU. Output only DNG or NEU.\nItem i0385: Circuit board collection from scrapped radio transceivers"
+          }
+        }
+      }
+    },
+    {
+      "at": "2026-05-01T02:26:16.594Z",
+      "step": "verify.response",
+      "payload": {
+        "iteration": 1,
+        "itemId": "i0385",
+        "response": {
+          "rawResponse": "{\n    \"code\": 1,\n    \"message\": \"ACCEPTED\",\n    \"debug\": {\n        \"output\": \"NEU\",\n        \"tokens\": 74,\n        \"cached_tokens\": 62,\n        \"input_cost\": 0.086,\n        \"output_cost\": 0.004,\n        \"balance\": 0.578,\n        \"result\": \"correct classification\",\n        \"classified_items\": 9,\n        \"required_items\": 10,\n        \"global_cache_hit_rate\": 71.78,\n        \"global_cache_total_tokens\": 691,\n        \"global_cache_cached_tokens\": 496\n    }\n}",
+          "normalized": "NEU",
+          "usage": {
+            "tokens": 74,
+            "cachedTokens": 62,
+            "inputCostPp": 0.086,
+            "outputCostPp": 0.004,
+            "balance": 0.578
+          }
+        }
+      }
+    },
+    {
+      "at": "2026-05-01T02:26:16.596Z",
+      "step": "budget.recorded_request",
+      "payload": {
+        "iteration": 1,
+        "itemId": "i0385",
+        "estimatedInputTokens": 71,
+        "estimatedOutputTokens": 1,
+        "estimatedCachedInputTokens": 59,
+        "usedHubUsage": true,
+        "hubUsage": {
+          "tokens": 74,
+          "cachedTokens": 62,
+          "inputCostPp": 0.086,
+          "outputCostPp": 0.004,
+          "balance": 0.578
+        },
+        "budgetState": {
+          "spentPp": 0.9219999999999998,
+          "inputTokens": 691,
+          "cachedInputTokens": 496,
+          "outputTokens": 9,
+          "requests": 9,
+          "resets": 1
+        }
+      }
+    },
+    {
+      "at": "2026-05-01T02:26:16.597Z",
+      "step": "prompt.generated",
+      "payload": {
+        "iteration": 1,
+        "itemId": "i6742",
+        "itemDescription": "extended-range anti-tank mine",
+        "candidateId": "auto_bootstrap_1",
+        "fullPrompt": "Reply DNG if dangerous (explosive,flammable,corrosive,toxic,radioactive,weapon,biohazard), else NEU. Exception: \"reactor\",\"fuel rod\",\"fuel cassette\"=always NEU. Output only DNG or NEU.\nItem i6742: extended-range anti-tank mine",
+        "staticPrefix": "Reply DNG if dangerous (explosive,flammable,corrosive,toxic,radioactive,weapon,biohazard), else NEU. Exception: \"reactor\",\"fuel rod\",\"fuel cassette\"=always NEU. Output only DNG or NEU.",
+        "dynamicSuffix": "Item i6742: extended-range anti-tank mine",
+        "tokenEstimate": {
+          "tokens": 67,
+          "limit": 100,
+          "withinLimit": true
+        }
+      }
+    },
+    {
+      "at": "2026-05-01T02:26:16.602Z",
+      "step": "verify.request",
+      "payload": {
+        "iteration": 1,
+        "itemId": "i6742",
+        "request": {
+          "task": "categorize",
+          "answer": {
+            "prompt": "Reply DNG if dangerous (explosive,flammable,corrosive,toxic,radioactive,weapon,biohazard), else NEU. Exception: \"reactor\",\"fuel rod\",\"fuel cassette\"=always NEU. Output only DNG or NEU.\nItem i6742: extended-range anti-tank mine"
+          }
+        }
+      }
+    },
+    {
+      "at": "2026-05-01T02:26:17.195Z",
+      "step": "verify.response",
+      "payload": {
+        "iteration": 1,
+        "itemId": "i6742",
+        "response": {
+          "rawResponse": "{\n    \"code\": 0,\n    \"message\": \"ACCEPTED - {FLG:SMUGGLER}\",\n    \"debug\": {\n        \"output\": \"DNG\",\n        \"tokens\": 72,\n        \"cached_tokens\": 62,\n        \"input_cost\": 0.082,\n        \"output_cost\": 0.004,\n        \"balance\": 0.492,\n        \"result\": \"correct classification\",\n        \"classified_items\": 10,\n        \"required_items\": 10,\n        \"global_cache_hit_rate\": 73.13,\n        \"global_cache_total_tokens\": 763,\n        \"global_cache_cached_tokens\": 558,\n        \"flag\": \"{FLG:SMUGGLER}\"\n    }\n}",
+          "normalized": "DNG",
+          "flag": "{FLG:SMUGGLER}",
+          "usage": {
+            "tokens": 72,
+            "cachedTokens": 62,
+            "inputCostPp": 0.082,
+            "outputCostPp": 0.004,
+            "balance": 0.492
+          }
+        }
+      }
+    },
+    {
+      "at": "2026-05-01T02:26:17.197Z",
+      "step": "budget.recorded_request",
+      "payload": {
+        "iteration": 1,
+        "itemId": "i6742",
+        "estimatedInputTokens": 67,
+        "estimatedOutputTokens": 1,
+        "estimatedCachedInputTokens": 55,
+        "usedHubUsage": true,
+        "hubUsage": {
+          "tokens": 72,
+          "cachedTokens": 62,
+          "inputCostPp": 0.082,
+          "outputCostPp": 0.004,
+          "balance": 0.492
+        },
+        "budgetState": {
+          "spentPp": 1.0079999999999998,
+          "inputTokens": 763,
+          "cachedInputTokens": 558,
+          "outputTokens": 10,
+          "requests": 10,
+          "resets": 1
+        }
+      }
+    },
+    {
+      "at": "2026-05-01T02:26:17.203Z",
+      "step": "verify.flag_received",
+      "payload": {
+        "iteration": 1,
+        "itemId": "i6742",
+        "flag": "{FLG:SMUGGLER}"
+      }
+    },
+    {
+      "at": "2026-05-01T02:26:17.208Z",
+      "step": "iteration.completed",
+      "payload": {
+        "iterationId": "it_1_1777602368901",
+        "iteration": 1,
+        "status": "success",
+        "candidateId": "auto_bootstrap_1",
+        "hypothesisForNextRevision": "classification mismatch; tighten hazard criteria.",
+        "todo": [
+          {
+            "id": "i5683",
+            "description": "Bag of stainless steel bolts, nuts, and washers in metric sizes",
+            "status": "accepted",
+            "normalized": "NEU"
+          },
+          {
+            "id": "i7628",
+            "description": "Transformer core from a substation, weighs about 90 kilograms",
+            "status": "accepted",
+            "normalized": "NEU"
+          },
+          {
+            "id": "i8827",
+            "description": "Stun baton with cracked insulation and exposed wiring",
+            "status": "accepted",
+            "normalized": "DNG"
+          },
+          {
+            "id": "i4796",
+            "description": "Reactor fuel cassette stored in regulation shielding canister, fully certified",
+            "status": "accepted",
+            "normalized": "NEU"
+          },
+          {
+            "id": "i4668",
+            "description": "Functional flamethrower with pressurized fuel canister and ignition system",
+            "status": "accepted",
+            "normalized": "DNG"
+          },
+          {
+            "id": "i7391",
+            "description": "Reactor fuel cassette containing enriched uranium pellets for portable nuclear power units",
+            "status": "accepted",
+            "normalized": "NEU"
+          },
+          {
+            "id": "i4077",
+            "description": "Compact submachine gun frame missing the magazine",
+            "status": "accepted",
+            "normalized": "DNG"
+          },
+          {
+            "id": "i2891",
+            "description": "Handful of ceramic capacitors and resistors in an old tobacco tin",
+            "status": "accepted",
+            "normalized": "NEU"
+          },
+          {
+            "id": "i0385",
+            "description": "Circuit board collection from scrapped radio transceivers",
+            "status": "accepted",
+            "normalized": "NEU"
+          },
+          {
+            "id": "i6742",
+            "description": "extended-range anti-tank mine",
+            "status": "accepted",
+            "normalized": "DNG"
+          }
+        ],
+        "results": [
+          {
+            "item": {
+              "id": "i5683",
+              "description": "Bag of stainless steel bolts, nuts, and washers in metric sizes",
+              "raw": {
+                "code": "i5683",
+                "description": "Bag of stainless steel bolts, nuts, and washers in metric sizes"
+              }
+            },
+            "prompt": "Reply DNG if dangerous (explosive,flammable,corrosive,toxic,radioactive,weapon,biohazard), else NEU. Exception: \"reactor\",\"fuel rod\",\"fuel cassette\"=always NEU. Output only DNG or NEU.\nItem i5683: Bag of stainless steel bolts, nuts, and washers in metric sizes",
+            "tokenEstimate": {
+              "tokens": 74,
+              "limit": 100,
+              "withinLimit": true
+            },
+            "verify": {
+              "rawResponse": "{\n    \"code\": 1,\n    \"message\": \"ACCEPTED\",\n    \"debug\": {\n        \"output\": \"NEU\",\n        \"tokens\": 79,\n        \"cached_tokens\": 0,\n        \"input_cost\": 0.158,\n        \"output_cost\": 0.004,\n        \"balance\": 1.338,\n        \"result\": \"correct classification\",\n        \"classified_items\": 1,\n        \"required_items\": 10,\n        \"global_cache_hit_rate\": 0,\n        \"global_cache_total_tokens\": 79,\n        \"global_cache_cached_tokens\": 0\n    }\n}",
+              "normalized": "NEU",
+              "usage": {
+                "tokens": 79,
+                "cachedTokens": 0,
+                "inputCostPp": 0.158,
+                "outputCostPp": 0.004,
+                "balance": 1.338
+              }
+            },
+            "expected": "NEU"
+          },
+          {
+            "item": {
+              "id": "i7628",
+              "description": "Transformer core from a substation, weighs about 90 kilograms",
+              "raw": {
+                "code": "i7628",
+                "description": "Transformer core from a substation, weighs about 90 kilograms"
+              }
+            },
+            "prompt": "Reply DNG if dangerous (explosive,flammable,corrosive,toxic,radioactive,weapon,biohazard), else NEU. Exception: \"reactor\",\"fuel rod\",\"fuel cassette\"=always NEU. Output only DNG or NEU.\nItem i7628: Transformer core from a substation, weighs about 90 kilograms",
+            "tokenEstimate": {
+              "tokens": 73,
+              "limit": 100,
+              "withinLimit": true
+            },
+            "verify": {
+              "rawResponse": "{\n    \"code\": 1,\n    \"message\": \"ACCEPTED\",\n    \"debug\": {\n        \"output\": \"NEU\",\n        \"tokens\": 77,\n        \"cached_tokens\": 62,\n        \"input_cost\": 0.092,\n        \"output_cost\": 0.004,\n        \"balance\": 1.242,\n        \"result\": \"correct classification\",\n        \"classified_items\": 2,\n        \"required_items\": 10,\n        \"global_cache_hit_rate\": 39.74,\n        \"global_cache_total_tokens\": 156,\n        \"global_cache_cached_tokens\": 62\n    }\n}",
+              "normalized": "NEU",
+              "usage": {
+                "tokens": 77,
+                "cachedTokens": 62,
+                "inputCostPp": 0.092,
+                "outputCostPp": 0.004,
+                "balance": 1.242
+              }
+            },
+            "expected": "NEU"
+          },
+          {
+            "item": {
+              "id": "i8827",
+              "description": "Stun baton with cracked insulation and exposed wiring",
+              "raw": {
+                "code": "i8827",
+                "description": "Stun baton with cracked insulation and exposed wiring"
+              }
+            },
+            "prompt": "Reply DNG if dangerous (explosive,flammable,corrosive,toxic,radioactive,weapon,biohazard), else NEU. Exception: \"reactor\",\"fuel rod\",\"fuel cassette\"=always NEU. Output only DNG or NEU.\nItem i8827: Stun baton with cracked insulation and exposed wiring",
+            "tokenEstimate": {
+              "tokens": 70,
+              "limit": 100,
+              "withinLimit": true
+            },
+            "verify": {
+              "rawResponse": "{\n    \"code\": 1,\n    \"message\": \"ACCEPTED\",\n    \"debug\": {\n        \"output\": \"DNG\",\n        \"tokens\": 74,\n        \"cached_tokens\": 62,\n        \"input_cost\": 0.086,\n        \"output_cost\": 0.004,\n        \"balance\": 1.152,\n        \"result\": \"correct classification\",\n        \"classified_items\": 3,\n        \"required_items\": 10,\n        \"global_cache_hit_rate\": 53.91,\n        \"global_cache_total_tokens\": 230,\n        \"global_cache_cached_tokens\": 124\n    }\n}",
+              "normalized": "DNG",
+              "usage": {
+                "tokens": 74,
+                "cachedTokens": 62,
+                "inputCostPp": 0.086,
+                "outputCostPp": 0.004,
+                "balance": 1.152
+              }
+            },
+            "expected": "NEU"
+          },
+          {
+            "item": {
+              "id": "i4796",
+              "description": "Reactor fuel cassette stored in regulation shielding canister, fully certified",
+              "raw": {
+                "code": "i4796",
+                "description": "Reactor fuel cassette stored in regulation shielding canister, fully certified"
+              }
+            },
+            "prompt": "Reply DNG if dangerous (explosive,flammable,corrosive,toxic,radioactive,weapon,biohazard), else NEU. Exception: \"reactor\",\"fuel rod\",\"fuel cassette\"=always NEU. Output only DNG or NEU.\nItem i4796: Reactor fuel cassette stored in regulation shielding canister, fully certified",
+            "tokenEstimate": {
+              "tokens": 73,
+              "limit": 100,
+              "withinLimit": true
+            },
+            "verify": {
+              "rawResponse": "{\n    \"code\": 1,\n    \"message\": \"ACCEPTED\",\n    \"debug\": {\n        \"output\": \"NEU\",\n        \"tokens\": 78,\n        \"cached_tokens\": 62,\n        \"input_cost\": 0.094,\n        \"output_cost\": 0.004,\n        \"balance\": 1.054,\n        \"result\": \"correct classification\",\n        \"classified_items\": 4,\n        \"required_items\": 10,\n        \"global_cache_hit_rate\": 60.39,\n        \"global_cache_total_tokens\": 308,\n        \"global_cache_cached_tokens\": 186\n    }\n}",
+              "normalized": "NEU",
+              "usage": {
+                "tokens": 78,
+                "cachedTokens": 62,
+                "inputCostPp": 0.094,
+                "outputCostPp": 0.004,
+                "balance": 1.054
+              }
+            },
+            "expected": "NEU"
+          },
+          {
+            "item": {
+              "id": "i4668",
+              "description": "Functional flamethrower with pressurized fuel canister and ignition system",
+              "raw": {
+                "code": "i4668",
+                "description": "Functional flamethrower with pressurized fuel canister and ignition system"
+              }
+            },
+            "prompt": "Reply DNG if dangerous (explosive,flammable,corrosive,toxic,radioactive,weapon,biohazard), else NEU. Exception: \"reactor\",\"fuel rod\",\"fuel cassette\"=always NEU. Output only DNG or NEU.\nItem i4668: Functional flamethrower with pressurized fuel canister and ignition system",
+            "tokenEstimate": {
+              "tokens": 75,
+              "limit": 100,
+              "withinLimit": true
+            },
+            "verify": {
+              "rawResponse": "{\n    \"code\": 1,\n    \"message\": \"ACCEPTED\",\n    \"debug\": {\n        \"output\": \"DNG\",\n        \"tokens\": 79,\n        \"cached_tokens\": 62,\n        \"input_cost\": 0.096,\n        \"output_cost\": 0.004,\n        \"balance\": 0.954,\n        \"result\": \"correct classification\",\n        \"classified_items\": 5,\n        \"required_items\": 10,\n        \"global_cache_hit_rate\": 64.08,\n        \"global_cache_total_tokens\": 387,\n        \"global_cache_cached_tokens\": 248\n    }\n}",
+              "normalized": "DNG",
+              "usage": {
+                "tokens": 79,
+                "cachedTokens": 62,
+                "inputCostPp": 0.096,
+                "outputCostPp": 0.004,
+                "balance": 0.954
+              }
+            },
+            "expected": "NEU"
+          },
+          {
+            "item": {
+              "id": "i7391",
+              "description": "Reactor fuel cassette containing enriched uranium pellets for portable nuclear power units",
+              "raw": {
+                "code": "i7391",
+                "description": "Reactor fuel cassette containing enriched uranium pellets for portable nuclear power units"
+              }
+            },
+            "prompt": "Reply DNG if dangerous (explosive,flammable,corrosive,toxic,radioactive,weapon,biohazard), else NEU. Exception: \"reactor\",\"fuel rod\",\"fuel cassette\"=always NEU. Output only DNG or NEU.\nItem i7391: Reactor fuel cassette containing enriched uranium pellets for portable nuclear power units",
+            "tokenEstimate": {
+              "tokens": 73,
+              "limit": 100,
+              "withinLimit": true
+            },
+            "verify": {
+              "rawResponse": "{\n    \"code\": 1,\n    \"message\": \"ACCEPTED\",\n    \"debug\": {\n        \"output\": \"NEU\",\n        \"tokens\": 78,\n        \"cached_tokens\": 62,\n        \"input_cost\": 0.094,\n        \"output_cost\": 0.004,\n        \"balance\": 0.856,\n        \"result\": \"correct classification\",\n        \"classified_items\": 6,\n        \"required_items\": 10,\n        \"global_cache_hit_rate\": 66.67,\n        \"global_cache_total_tokens\": 465,\n        \"global_cache_cached_tokens\": 310\n    }\n}",
+              "normalized": "NEU",
+              "usage": {
+                "tokens": 78,
+                "cachedTokens": 62,
+                "inputCostPp": 0.094,
+                "outputCostPp": 0.004,
+                "balance": 0.856
+              }
+            },
+            "expected": "NEU"
+          },
+          {
+            "item": {
+              "id": "i4077",
+              "description": "Compact submachine gun frame missing the magazine",
+              "raw": {
+                "code": "i4077",
+                "description": "Compact submachine gun frame missing the magazine"
+              }
+            },
+            "prompt": "Reply DNG if dangerous (explosive,flammable,corrosive,toxic,radioactive,weapon,biohazard), else NEU. Exception: \"reactor\",\"fuel rod\",\"fuel cassette\"=always NEU. Output only DNG or NEU.\nItem i4077: Compact submachine gun frame missing the magazine",
+            "tokenEstimate": {
+              "tokens": 69,
+              "limit": 100,
+              "withinLimit": true
+            },
+            "verify": {
+              "rawResponse": "{\n    \"code\": 1,\n    \"message\": \"ACCEPTED\",\n    \"debug\": {\n        \"output\": \"DNG\",\n        \"tokens\": 73,\n        \"cached_tokens\": 62,\n        \"input_cost\": 0.084,\n        \"output_cost\": 0.004,\n        \"balance\": 0.768,\n        \"result\": \"correct classification\",\n        \"classified_items\": 7,\n        \"required_items\": 10,\n        \"global_cache_hit_rate\": 69.14,\n        \"global_cache_total_tokens\": 538,\n        \"global_cache_cached_tokens\": 372\n    }\n}",
+              "normalized": "DNG",
+              "usage": {
+                "tokens": 73,
+                "cachedTokens": 62,
+                "inputCostPp": 0.084,
+                "outputCostPp": 0.004,
+                "balance": 0.768
+              }
+            },
+            "expected": "DNG"
+          },
+          {
+            "item": {
+              "id": "i2891",
+              "description": "Handful of ceramic capacitors and resistors in an old tobacco tin",
+              "raw": {
+                "code": "i2891",
+                "description": "Handful of ceramic capacitors and resistors in an old tobacco tin"
+              }
+            },
+            "prompt": "Reply DNG if dangerous (explosive,flammable,corrosive,toxic,radioactive,weapon,biohazard), else NEU. Exception: \"reactor\",\"fuel rod\",\"fuel cassette\"=always NEU. Output only DNG or NEU.\nItem i2891: Handful of ceramic capacitors and resistors in an old tobacco tin",
+            "tokenEstimate": {
+              "tokens": 75,
+              "limit": 100,
+              "withinLimit": true
+            },
+            "verify": {
+              "rawResponse": "{\n    \"code\": 1,\n    \"message\": \"ACCEPTED\",\n    \"debug\": {\n        \"output\": \"NEU\",\n        \"tokens\": 79,\n        \"cached_tokens\": 62,\n        \"input_cost\": 0.096,\n        \"output_cost\": 0.004,\n        \"balance\": 0.668,\n        \"result\": \"correct classification\",\n        \"classified_items\": 8,\n        \"required_items\": 10,\n        \"global_cache_hit_rate\": 70.34,\n        \"global_cache_total_tokens\": 617,\n        \"global_cache_cached_tokens\": 434\n    }\n}",
+              "normalized": "NEU",
+              "usage": {
+                "tokens": 79,
+                "cachedTokens": 62,
+                "inputCostPp": 0.096,
+                "outputCostPp": 0.004,
+                "balance": 0.668
+              }
+            },
+            "expected": "NEU"
+          },
+          {
+            "item": {
+              "id": "i0385",
+              "description": "Circuit board collection from scrapped radio transceivers",
+              "raw": {
+                "code": "i0385",
+                "description": "Circuit board collection from scrapped radio transceivers"
+              }
+            },
+            "prompt": "Reply DNG if dangerous (explosive,flammable,corrosive,toxic,radioactive,weapon,biohazard), else NEU. Exception: \"reactor\",\"fuel rod\",\"fuel cassette\"=always NEU. Output only DNG or NEU.\nItem i0385: Circuit board collection from scrapped radio transceivers",
+            "tokenEstimate": {
+              "tokens": 71,
+              "limit": 100,
+              "withinLimit": true
+            },
+            "verify": {
+              "rawResponse": "{\n    \"code\": 1,\n    \"message\": \"ACCEPTED\",\n    \"debug\": {\n        \"output\": \"NEU\",\n        \"tokens\": 74,\n        \"cached_tokens\": 62,\n        \"input_cost\": 0.086,\n        \"output_cost\": 0.004,\n        \"balance\": 0.578,\n        \"result\": \"correct classification\",\n        \"classified_items\": 9,\n        \"required_items\": 10,\n        \"global_cache_hit_rate\": 71.78,\n        \"global_cache_total_tokens\": 691,\n        \"global_cache_cached_tokens\": 496\n    }\n}",
+              "normalized": "NEU",
+              "usage": {
+                "tokens": 74,
+                "cachedTokens": 62,
+                "inputCostPp": 0.086,
+                "outputCostPp": 0.004,
+                "balance": 0.578
+              }
+            },
+            "expected": "NEU"
+          },
+          {
+            "item": {
+              "id": "i6742",
+              "description": "extended-range anti-tank mine",
+              "raw": {
+                "code": "i6742",
+                "description": "extended-range anti-tank mine"
+              }
+            },
+            "prompt": "Reply DNG if dangerous (explosive,flammable,corrosive,toxic,radioactive,weapon,biohazard), else NEU. Exception: \"reactor\",\"fuel rod\",\"fuel cassette\"=always NEU. Output only DNG or NEU.\nItem i6742: extended-range anti-tank mine",
+            "tokenEstimate": {
+              "tokens": 67,
+              "limit": 100,
+              "withinLimit": true
+            },
+            "verify": {
+              "rawResponse": "{\n    \"code\": 0,\n    \"message\": \"ACCEPTED - {FLG:SMUGGLER}\",\n    \"debug\": {\n        \"output\": \"DNG\",\n        \"tokens\": 72,\n        \"cached_tokens\": 62,\n        \"input_cost\": 0.082,\n        \"output_cost\": 0.004,\n        \"balance\": 0.492,\n        \"result\": \"correct classification\",\n        \"classified_items\": 10,\n        \"required_items\": 10,\n        \"global_cache_hit_rate\": 73.13,\n        \"global_cache_total_tokens\": 763,\n        \"global_cache_cached_tokens\": 558,\n        \"flag\": \"{FLG:SMUGGLER}\"\n    }\n}",
+              "normalized": "DNG",
+              "flag": "{FLG:SMUGGLER}",
+              "usage": {
+                "tokens": 72,
+                "cachedTokens": 62,
+                "inputCostPp": 0.082,
+                "outputCostPp": 0.004,
+                "balance": 0.492
+              }
+            },
+            "expected": "DNG"
+          }
+        ]
+      }
+    },
+    {
+      "at": "2026-05-01T02:26:17.218Z",
+      "step": "prompt.refine.forced",
+      "payload": {
+        "iteration": 1,
+        "reason": "FORCE_PROMPT_ENGINEER=1",
+        "candidateId": "auto_bootstrap_1"
+      }
+    },
+    {
+      "at": "2026-05-01T02:26:18.305Z",
+      "step": "prompt.refine.forced.completed",
+      "payload": {
+        "iteration": 1,
+        "fromCandidateId": "auto_bootstrap_1",
+        "toCandidateId": "forced_2",
+        "newPrefix": "Reply DNG if dangerous (explosive,flammable,corrosive,toxic,radioactive,weapon,biohazard), else NEU. Exception: \"reactor\",\"fuel rod\",\"fuel cassette\"=always NEU. Output only DNG or NEU."
+      }
+    },
+    {
+      "at": "2026-05-01T02:26:18.311Z",
+      "step": "run.completed",
+      "payload": {
+        "iteration": 1,
+        "score": 10,
+        "flag": "{FLG:SMUGGLER}",
+        "candidateId": "auto_bootstrap_1",
+        "spentPp": 1.0079999999999998
+      }
+    }
+  ],
+  "summary": {
+    "status": "success",
+    "finalIteration": 1,
+    "score": 10,
+    "flag": "{FLG:SMUGGLER}",
+    "bestScore": 10,
+    "bestCandidateId": "auto_bootstrap_1",
+    "budget": {
+      "spentPp": 1.0079999999999998,
+      "inputTokens": 763,
+      "cachedInputTokens": 558,
+      "outputTokens": 10,
+      "requests": 10,
+      "resets": 1
+    }
+  },
+  "finishedAt": "2026-05-01T02:26:18.312Z"
+}
