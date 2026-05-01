@@ -27,13 +27,14 @@ const SYSTEM_PROMPT = `You are a prompt engineer optimising a cargo classifier t
 Environment:
 - The classifier receives: [your static prefix] + newline + [item line, e.g. "Item 7: Hatchet with sharpened head"]
 - Token budget: prefix + newline + item_line ≤ 100 tokens (tiktoken cl100k_base). Keep prefix ≤ 78 tokens.
+- Practical budget goal: keep prefix SHORT (target ≤ 55 tokens) so all 10 items fit in a 1.5 PP run.
 - Write in English — it tokenises efficiently.
 
 Your prefix must enforce:
 - Output: ONLY "DNG" or "NEU", nothing else
 - DNG = dangerous goods (explosive, flammable, corrosive, toxic, radioactive, weapon, biohazard)
 - NEU = safe / neutral goods
-- HARD EXCEPTION: items mentioning "reactor" or "fuel rod" are always NEU regardless of other content
+- HARD EXCEPTION: items mentioning "reactor", "fuel rod", or "fuel cassette" are always NEU regardless of other content
 
 How to reason about failures:
 1. Identify the CATEGORY the failing item belongs to (not the item itself).
@@ -47,10 +48,52 @@ If you feel the urge to name a specific item in your rule, step back and name it
 
 Each turn you receive a concise failure digest. Learn from the full conversation history.
 Do not repeat a prefix already tried.
+Prefer compact syntax:
+- short clauses
+- comma-separated hazard list
+- no filler words
+
+If failure indicates budget exhaustion, reduce prefix aggressively while preserving rules.
 
 Return ONLY the new prefix text. No JSON, no markdown, no explanation.`;
 
 const tokenEstimator = new TokenEstimator();
+
+function sanitizePrefix(prefix: string): string {
+  return prefix
+    .replace(/[\u201C\u201D]/g, "\"")
+    .replace(/[\u2018\u2019]/g, "'")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+function hasTerm(text: string, term: string): boolean {
+  const escaped = term.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  const rx = new RegExp(`\\b${escaped}\\b`, "i");
+  return rx.test(text);
+}
+
+function ensureHardException(prefix: string): string {
+  const lower = prefix.toLowerCase();
+  const hasReactor = hasTerm(lower, "reactor");
+  const hasFuelRod = hasTerm(lower, "fuel rod");
+  const hasFuelCassette = hasTerm(lower, "fuel cassette");
+  if (hasReactor && hasFuelRod && hasFuelCassette) {
+    return prefix;
+  }
+
+  // Keep this minimally invasive: add only missing terms, not a full duplicate clause.
+  const additions: string[] = [];
+  if (!hasReactor) additions.push("reactor=NEU.");
+  if (!hasFuelRod) additions.push("fuel rod=NEU.");
+  if (!hasFuelCassette) additions.push("fuel cassette=NEU.");
+  return sanitizePrefix(`${prefix} ${additions.join(" ")}`);
+}
+
+function normalizeEngineeredPrefix(candidate: string): string {
+  const sanitized = sanitizePrefix(candidate);
+  return ensureHardException(sanitized);
+}
 
 // [prompt.md] "Odróżnianie szumu od sygnału z pomocą modelu"
 // Przed przekazaniem informacji agentowi filtrujemy odpowiedzi huba w kodzie.
@@ -64,6 +107,9 @@ const tokenEstimator = new TokenEstimator();
 // dzięki czemu agent widzi pełny obraz swoich poprzednich prób i może wyciągać wnioski.
 function buildUserMessage(current: PromptCandidate, iteration: ExperimentIteration): string {
   const prefixTokens = tokenEstimator.estimate(current.staticPrefix, 100).tokens;
+  const hubError = iteration.hubError ?? "(none)";
+  const isBudgetIssue = /budget|insufficient funds|402/i.test(hubError);
+  const isBootstrap = /bootstrap/i.test(hubError);
 
   // Only items the hub explicitly rejected or that returned unparseable output.
   const rejectedItems = iteration.results
@@ -89,6 +135,13 @@ function buildUserMessage(current: PromptCandidate, iteration: ExperimentIterati
       })()
     : `  prefix=${prefixTokens} tokens (no items sent)`;
 
+  const budgetDirective = isBudgetIssue
+    ? "Budget issue observed. Compress hard: keep new prefix <= 55 tokens while preserving core rules."
+    : "Budget unknown/ok. Keep new prefix <= 65 tokens unless impossible.";
+  const bootstrapDirective = isBootstrap
+    ? "Bootstrap mode: create an immediately usable production prefix with strong token efficiency."
+    : "";
+
   return `--- Attempt summary ---
 Prefix tried (${prefixTokens} tokens):
 "${current.staticPrefix}"
@@ -105,6 +158,8 @@ ${tokenLines}
 --- Your task ---
 Identify the CATEGORY behind the failing items and write a GENERALISED rule.
 Do not name the specific items. Aim for universal coverage.
+${budgetDirective}
+${bootstrapDirective}
 New prefix must be ≤ 78 tokens. Return the prefix text only.`;
 }
 
@@ -125,7 +180,11 @@ export class PromptEngineer {
   ): Promise<PromptCandidate> {
     if (!this.config.openrouterApiKey) {
       console.warn("[PromptEngineer] No OPENROUTER_API_KEY — falling back to rule-based refinement.");
-      return refineCandidate(current, iteration.hypothesisForNextRevision ?? "classification mismatch", nextId);
+      const fallback = refineCandidate(current, iteration.hypothesisForNextRevision ?? "classification mismatch", nextId);
+      return {
+        ...fallback,
+        staticPrefix: normalizeEngineeredPrefix(fallback.staticPrefix)
+      };
     }
 
     const chatPath = resolve(this.config.stateDir, `engineer_chat_${runId}.json`);
@@ -164,7 +223,13 @@ export class PromptEngineer {
 
       // Strip any reasoning text — take only the last non-empty paragraph as the prompt.
       const paragraphs = raw.split(/\n{2,}/).map((p) => p.trim()).filter(Boolean);
-      const newPrefix = paragraphs.at(-1) ?? raw;
+      const rawPrefix = paragraphs.at(-1) ?? raw;
+      const newPrefix = normalizeEngineeredPrefix(rawPrefix);
+
+      const prefixTokens = tokenEstimator.estimate(newPrefix, 78).tokens;
+      if (prefixTokens > 78) {
+        console.warn(`[PromptEngineer] Prefix is ${prefixTokens} tokens (>78 guidance). Keeping model output for agentic iteration.`);
+      }
 
       // Save assistant reply to history so the next iteration sees what was already tried.
       this.history.push({ role: "assistant", content: newPrefix });
@@ -182,7 +247,11 @@ export class PromptEngineer {
       // On failure remove the user message we just pushed so history stays consistent.
       this.history.pop();
       console.warn(`[PromptEngineer] LLM call failed (${String(error)}), falling back to rule-based refinement.`);
-      return refineCandidate(current, iteration.hypothesisForNextRevision ?? "classification mismatch", nextId);
+      const fallback = refineCandidate(current, iteration.hypothesisForNextRevision ?? "classification mismatch", nextId);
+      return {
+        ...fallback,
+        staticPrefix: normalizeEngineeredPrefix(fallback.staticPrefix)
+      };
     }
   }
 

@@ -13,7 +13,15 @@ const envSchema = z.object({
   BUDGET_LIMIT_PP: z.coerce.number().positive().default(1.5),
   REQUEST_RETRY_COUNT: z.coerce.number().int().min(0).default(3),
   REQUEST_RETRY_DELAY_MS: z.coerce.number().int().min(50).default(400),
-  STATE_DIR: z.string().default("state")
+  STATE_DIR: z.string().default("state"),
+  RESUME_BUDGET_STATE: z
+    .enum(["0", "1"])
+    .default("0")
+    .transform((value) => value === "1"),
+  FORCE_PROMPT_ENGINEER: z
+    .enum(["0", "1"])
+    .default("0")
+    .transform((value) => value === "1")
 });
 
 export interface AppConfig {
@@ -30,6 +38,8 @@ export interface AppConfig {
   requestRetryCount: number;
   requestRetryDelayMs: number;
   stateDir: string;
+  resumeBudgetState: boolean;
+  forcePromptEngineer: boolean;
 }
 
 export function loadConfig(cliMode?: Mode): AppConfig {
@@ -54,6 +64,8 @@ export function loadConfig(cliMode?: Mode): AppConfig {
     budgetLimitPp: parsed.BUDGET_LIMIT_PP,
     requestRetryCount: parsed.REQUEST_RETRY_COUNT,
     requestRetryDelayMs: parsed.REQUEST_RETRY_DELAY_MS,
-    stateDir: parsed.STATE_DIR
+    stateDir: parsed.STATE_DIR,
+    resumeBudgetState: parsed.RESUME_BUDGET_STATE,
+    forcePromptEngineer: parsed.FORCE_PROMPT_ENGINEER
   };
 }

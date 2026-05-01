@@ -2,26 +2,33 @@ import type { CsvItem, PromptCandidate, PromptRender } from "./types.js";
 
 export const promptCandidates: PromptCandidate[] = [
   {
-    id: "p1_semantic",
+    id: "p1_empty",
     staticPrefix:
-      "Classify cargo. Reply DNG or NEU only. NEU if reactor or fuel cassette. DNG if weapon, blade, gun, knife, crossbow, explosive, toxic, radioactive, or biohazard. Else NEU.",
+      "",
     dynamicSuffixTemplate: "Item {id}: {description}",
-    rationale: "Semantic weapon types + reactor NEU exception."
-  },
-  {
-    id: "p2_weapons_focus",
-    staticPrefix:
-      "Output DNG or NEU only. Reactor/fuel cassette: always NEU. DNG=guns,knives,blades,crossbows,explosives,toxics,radioactive,biohazard. Else NEU.",
-    dynamicSuffixTemplate: "Item {id}: {description}",
-    rationale: "Compact weapon list + reactor NEU override."
-  },
-  {
-    id: "p3_intent_based",
-    staticPrefix:
-      "DNG or NEU only. NEU for reactor/fuel cassette items. DNG for any weapon, cutting tool used as weapon, firearm, explosive, poison, or radioactive material. Else NEU.",
-    dynamicSuffixTemplate: "Item {id}: {description}",
-    rationale: "Intent-based classification with reactor exception."
+    rationale: "Empty prefix"
   }
+  // {
+  //   id: "p1_semantic",
+  //   staticPrefix:
+  //     "Classify cargo. Reply DNG or NEU only. NEU if reactor or fuel cassette. DNG if weapon, blade, gun, knife, crossbow, explosive, toxic, radioactive, or biohazard. Else NEU.",
+  //   dynamicSuffixTemplate: "Item {id}: {description}",
+  //   rationale: "Semantic weapon types + reactor NEU exception."
+  // },
+  // {
+  //   id: "p2_weapons_focus",
+  //   staticPrefix:
+  //     "Output DNG or NEU only. Reactor/fuel cassette: always NEU. DNG=guns,knives,blades,crossbows,explosives,toxics,radioactive,biohazard. Else NEU.",
+  //   dynamicSuffixTemplate: "Item {id}: {description}",
+  //   rationale: "Compact weapon list + reactor NEU override."
+  // },
+  // {
+  //   id: "p3_intent_based",
+  //   staticPrefix:
+  //     "DNG or NEU only. NEU for reactor/fuel cassette items. DNG for any weapon, cutting tool used as weapon, firearm, explosive, poison, or radioactive material. Else NEU.",
+  //   dynamicSuffixTemplate: "Item {id}: {description}",
+  //   rationale: "Intent-based classification with reactor exception."
+  // }
 ];
 
 // [prompt.md] "Struktura dynamicznej instrukcji systemowej (Prompt Caching)"

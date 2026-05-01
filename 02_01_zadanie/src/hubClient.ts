@@ -10,7 +10,12 @@ interface VerifyResponseDebug {
   result?: string;
   classified_items?: number;
   required_items?: number;
+  tokens?: number;
+  cached_tokens?: number;
+  input_cost?: number;
+  output_cost?: number;
   balance?: number;
+  flag?: string;
 }
 
 interface VerifyResponseShape {
@@ -19,6 +24,11 @@ interface VerifyResponseShape {
   answer?: string;
   result?: string;
   status?: string;
+  tokens?: number;
+  cached_tokens?: number;
+  input_cost?: number;
+  output_cost?: number;
+  balance?: number;
   debug?: VerifyResponseDebug;
 }
 
@@ -77,20 +87,32 @@ export class HubClient {
 
     const rawBody = await res.text();
 
-    // 402 = hub-side budget exhausted; treat as a recoverable error so the caller can reset.
-    if (res.status === 402) {
-      return {
-        rawResponse: rawBody,
-        normalized: "INVALID",
-        error: "Hub budget exceeded (402)"
-      };
-    }
-
     let parsed: VerifyResponseShape | undefined;
     try {
       parsed = JSON.parse(rawBody) as VerifyResponseShape;
     } catch {
       parsed = undefined;
+    }
+
+    const usageCandidate = {
+      tokens: parsed?.debug?.tokens ?? parsed?.tokens,
+      cachedTokens: parsed?.debug?.cached_tokens ?? parsed?.cached_tokens,
+      inputCostPp: parsed?.debug?.input_cost ?? parsed?.input_cost,
+      outputCostPp: parsed?.debug?.output_cost ?? parsed?.output_cost,
+      balance: parsed?.debug?.balance ?? parsed?.balance
+    };
+    const usage = Object.values(usageCandidate).some((value) => value !== undefined)
+      ? usageCandidate
+      : undefined;
+
+    // 402 = hub-side budget exhausted; treat as a recoverable error so the caller can reset.
+    if (res.status === 402) {
+      return {
+        rawResponse: rawBody,
+        normalized: "INVALID",
+        error: "Hub budget exceeded (402)",
+        usage
+      };
     }
 
     // Hub returns classification in debug.output; fallback to other fields for older responses.
@@ -109,7 +131,8 @@ export class HubClient {
       rawResponse: rawBody,
       normalized: normalizeOutput(rawValue),
       flag: extractFlag(rawBody),
-      error: isError
+      error: isError,
+      usage
     };
   }
 
@@ -127,6 +150,11 @@ export class HubClient {
         // 402 = hub budget exhausted — return immediately without retrying; caller handles it.
         if (res.status === 402) {
           return res;
+        }
+        // Do not retry client-side errors (except 402 handled above).
+        if (res.status >= 400 && res.status < 500) {
+          const body = await res.text();
+          throw new Error(`HTTP ${res.status} — ${body}`);
         }
         if (!res.ok) {
           throw new Error(`HTTP ${res.status}`);

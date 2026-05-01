@@ -42,6 +42,13 @@ export interface VerifyResult {
   isCorrect?: boolean;
   flag?: string;
   error?: string;
+  usage?: {
+    tokens?: number;
+    cachedTokens?: number;
+    inputCostPp?: number;
+    outputCostPp?: number;
+    balance?: number;
+  };
 }
 
 export interface ItemRunResult {

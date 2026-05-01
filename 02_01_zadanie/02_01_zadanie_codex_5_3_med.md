@@ -2,20 +2,19 @@
 
 ## 1. Overview
 
-This application is an agentic TypeScript CLI harness for the AI Devs `categorize` task. It repeatedly tests and improves an LLM prompt that classifies cargo items into:
-- `DNG` (dangerous)
-- `NEU` (neutral/safe)
+This project is an agentic TypeScript CLI that solves the AI Devs `categorize` challenge by iteratively improving a classification prompt and verifying it against a remote hub.
+
+The classifier must return only:
+- `DNG` (dangerous goods)
+- `NEU` (neutral/safe goods)
 
 Business purpose:
-- Automate finding a prompt that correctly classifies all rows from hub-provided CSV data.
-- Stay within strict operational constraints: prompt length (`<=100` tokens) and monetary budget (`1.5 PP`).
-- Stop when the hub returns the success flag `{FLG:...}`.
+- Find a prompt that classifies all 10 CSV items correctly and obtains `{FLG:...}`.
+- Control cost under a strict per-run budget (`1.5 PP`) and prompt token limit (`<=100`).
+- Persist run state, trace, and winning artifacts for debugging and reuse.
 
-Key problem solved:
-- Prompt optimization under budget and context-window pressure, with feedback-driven iteration and persistent local state.
-
-Primary domain rule implemented:
-- Reactor/fuel-related items are always `NEU` (hard exception), even if they contain hazard-like vocabulary.
+Critical domain rule:
+- Any item mentioning `reactor`, `fuel rod`, or `fuel cassette` must be treated as `NEU`.
 
 ---
 
@@ -23,49 +22,47 @@ Primary domain rule implemented:
 
 ### Workflow represented by the code
 
-The system models an iterative "prompt engineering + verification" business cycle:
+1. Load configuration from env + CLI mode.
+2. Start run trace and initialize budget state (fresh by default; optional resume).
+3. Send pre-run hub reset to normalize remote balance/state.
+4. Select initial prompt candidate:
+   - if placeholder/empty prefix, bootstrap via PromptEngineer immediately.
+5. For each iteration:
+   - fetch fresh CSV from hub,
+   - pre-check whether remaining local budget can fund at least one verify request,
+   - run item-by-item classification (stop on first failure),
+   - reset hub on failure,
+   - refine prompt when failure is actionable.
+6. On success:
+   - save flag, best prompt, session, budget, outbox artifacts.
+7. On non-actionable repeated hub failures or exhausted budget:
+   - stop early with explicit trace reason.
 
-1. Load runtime configuration and secrets from environment.
-2. Start a new run session and load persisted budget state.
-3. Fetch fresh CSV input from the remote hub.
-4. Build per-item prompts from a static instruction prefix + dynamic item suffix.
-5. Validate each prompt against token and budget constraints.
-6. Send each prompt to the hub verification endpoint.
-7. Stop iteration immediately on first failure (format, hub rejection, token guard, budget guard).
-8. If failed:
-   - reset hub state,
-   - derive failure hypothesis,
-   - refine prompt candidate (LLM-based or fallback rule-based),
-   - retry from fresh CSV.
-9. If successful:
-   - persist session + budget + best prompt + flag,
-   - publish artifacts to outbox for other agents.
+### Step-by-step interaction (runtime)
 
-### Step-by-step interaction (system perspective)
+1. User runs `npm run remote-experiment`.
+2. `ExperimentRunner.run()`:
+   - creates run/session objects,
+   - logs run metadata to `state/runs/trace_<runId>.json`,
+   - sends pre-run `reset`,
+   - optionally bootstraps prompt refinement.
+3. Iteration loop:
+   - `HubClient.fetchFreshCsv()` + `parseCsvItems()`,
+   - `renderPrompt()` + `TokenEstimator.estimate()`,
+   - `BudgetManager.hasBudgetForEstimated(...)` pre-flight,
+   - `HubClient.verifyPrompt(...)` for each item.
+4. Budget reconciliation:
+   - use hub-reported `input_cost/output_cost/tokens` when available,
+   - fallback to local estimate if hub usage fields are absent.
+5. Failure handling:
+   - if verify returns 402/-910, do one immediate recovery (`reset` + single retry same prompt/item),
+   - if still failing, classify failure type and decide refine/skip/stop.
 
-1. Operator runs `npm run remote-experiment` (`src/index.ts`).
-2. `ExperimentRunner.run()` initializes state, trace, and budget (`src/experimentRunner.ts`).
-3. For each iteration (`1..MAX_ITERATIONS`):
-   - `HubClient.fetchFreshCsv()` downloads current dataset (`src/hubClient.ts`).
-   - `parseCsvItems()` maps CSV rows to internal `CsvItem[]` (`src/csv.ts`).
-   - For each item:
-     - `renderPrompt()` assembles full prompt (`src/prompting.ts`).
-     - `TokenEstimator.estimate()` checks token limit (`src/tokenEstimator.ts`).
-     - `BudgetManager.hasBudgetForEstimated()` pre-validates spend (`src/budgetManager.ts`).
-     - `HubClient.verifyPrompt()` calls hub `/verify`.
-   - Results are logged to `experiments.jsonl` and `trace.jsonl` (`src/traceLogger.ts`).
-4. Failure path:
-   - Hub reset via `HubClient.reset()`.
-   - Prompt improved through `PromptEngineer.refine()` or `refineCandidate()`.
-5. Success path:
-   - Flag extracted and saved with context (`src/stateManager.ts`).
-   - Artifacts copied to `workspace/sessions/outbox/`.
+### Assumptions
 
-### Assumptions (explicit)
-
-- Assumption A1: Hub `/verify` is the source of truth for correctness; local label calculation in `expectedLocalLabel()` is used mainly for diagnostics.
-- Assumption A2: Hub CSV contains recognizable id/description headers (or accepted aliases).
-- Assumption A3: Each run is intended as a single-process workflow (no concurrency control around state files).
+- Hub `/verify` is the source of truth for acceptance and final flag.
+- CSV schema includes recognizable id/description aliases.
+- Single-run process semantics (no file lock strategy for concurrent runners).
 
 ---
 
@@ -73,76 +70,57 @@ The system models an iterative "prompt engineering + verification" business cycl
 
 ### High-level architecture
 
-The solution is a CLI-centered orchestration architecture with clear module responsibilities:
-
 - **Entry layer**
-  - CLI bootstrap and env loading (`src/index.ts`)
-  - Optional maintenance script (`src/reset.ts`)
+  - `src/index.ts` (main CLI runner)
+  - `src/reset.ts` (manual hub/local budget reset helper)
 
-- **Application orchestration layer**
-  - Iteration control, stop conditions, prompt lifecycle, run status (`src/experimentRunner.ts`)
+- **Orchestration layer**
+  - `src/experimentRunner.ts`
+  - controls run lifecycle, iteration loop, stop conditions, and refinement decisions
 
-- **Domain/service layer**
-  - Remote hub communication + retry (`src/hubClient.ts`)
-  - Prompt templates and rendering (`src/prompting.ts`)
-  - LLM-driven prompt refinement (`src/promptEngineer.ts`)
-  - Token counting (`src/tokenEstimator.ts`)
-  - Cost accounting and guards (`src/budgetManager.ts`)
-  - CSV parsing/mapping (`src/csv.ts`)
+- **Service/domain layer**
+  - `src/hubClient.ts` (CSV/verify/reset API, retry logic, response parsing)
+  - `src/promptEngineer.ts` (LLM refinement, compactness/safety post-processing)
+  - `src/prompting.ts` (initial candidates + prompt rendering)
+  - `src/tokenEstimator.ts` (token guard)
+  - `src/budgetManager.ts` (budget pre-check + reconciled accounting)
+  - `src/csv.ts` (CSV parser + header mapping)
 
 - **Persistence/observability layer**
-  - Session/budget/flag/outbox files (`src/stateManager.ts`)
-  - JSONL tracing of events and iterations (`src/traceLogger.ts`)
+  - `src/stateManager.ts` (session/budget/best prompt/flag/outbox)
+  - `src/traceLogger.ts` (JSONL + single-file run trace)
 
 ### Entry points
 
-- `src/index.ts` (main runtime entrypoint)
-- `src/reset.ts` (manual reset utility)
-- `package.json` scripts:
-  - `remote-experiment`
-  - `start`
-  - `reset`
-
-### Core modules/services
-
-- `ExperimentRunner`: end-to-end coordinator and state machine.
-- `HubClient`: API adapter for CSV fetch, verification, reset, and retries.
-- `PromptEngineer`: adaptive prompt optimizer with multi-turn memory persisted per run.
-- `BudgetManager`: deterministic cost estimator + spending ledger.
-- `SessionStateManager`: stable artifact persistence for cross-run continuity.
+- `npm run remote-experiment` -> `src/index.ts --mode REMOTE_EXPERIMENT`
+- `npm run reset` -> `src/reset.ts`
+- `npm run start` -> `src/index.ts`
 
 ### External dependencies
 
-- `dotenv`: layered `.env` loading.
-- `zod`: runtime env schema validation.
-- `js-tiktoken`: token estimation (`cl100k_base` fallback).
-- OpenRouter API (optional) for refinement model.
-- Remote hub API (`https://hub.ag3nts.org` by default) for task data and verification.
-
-### Component interaction summary
-
-- `index` creates `ExperimentRunner` with `SessionStateManager` + `TraceLogger`.
-- `ExperimentRunner` depends on `HubClient`, `PromptEngineer`, `BudgetManager`, `TokenEstimator`.
-- `PromptEngineer` can call OpenRouter or fallback to local `refineCandidate()`.
-- `TraceLogger` and `SessionStateManager` persist operational and business artifacts.
+- `dotenv` (env loading)
+- `zod` (env schema validation)
+- `js-tiktoken` (token counting)
+- OpenRouter chat completions API (optional refinement engine)
+- Hub API (`/data/<apikey>/categorize.csv`, `/verify`)
 
 ### Architecture diagram
 
 ```mermaid
 graph TD
-    A[CLI: src/index.ts] --> B[Config Loader: src/config.ts]
+    A[CLI: index.ts] --> B[Config Loader]
     B --> C[ExperimentRunner]
     C --> D[HubClient]
-    C --> E[Prompting]
-    C --> F[PromptEngineer]
+    C --> E[PromptEngineer]
+    C --> F[Prompting]
     C --> G[TokenEstimator]
     C --> H[BudgetManager]
     C --> I[StateManager]
     C --> J[TraceLogger]
-    D --> K[Hub API /data and /verify]
-    F --> L[OpenRouter API (optional)]
-    I --> M[state/*.json + workspace/sessions/outbox/*]
-    J --> N[state/trace.jsonl + state/experiments.jsonl]
+    D --> K[Hub API /data + /verify]
+    E --> L[OpenRouter API]
+    I --> M[state/*.json + outbox files]
+    J --> N[state/trace.jsonl + state/experiments.jsonl + state/runs/trace_<runId>.json]
 ```
 
 ---
@@ -151,127 +129,116 @@ graph TD
 
 ### Input -> processing -> output
 
-1. **Input acquisition**
-   - CSV text from hub (`HubClient.fetchFreshCsv()`).
-   - Runtime settings from env (`loadConfig()`).
+1. **Input**
+   - env config (keys, limits, flags),
+   - fresh CSV from hub per iteration.
 
-2. **Input normalization**
-   - CSV parsed into `CsvItem[]` using flexible header matching (`parseCsvItems()`).
+2. **Prompt build**
+   - static prefix + dynamic item suffix (`Item {id}: {description}`),
+   - token estimate and budget feasibility check.
 
-3. **Prompt construction**
-   - Static prefix from active `PromptCandidate`.
-   - Dynamic suffix (`Item {id}: {description}`).
-   - Combined prompt is measured for tokens before network send.
+3. **Verification**
+   - POST prompt to hub,
+   - normalize output to `DNG|NEU|INVALID`,
+   - parse usage/cost fields from `debug` or top-level payload.
 
-4. **Guard phase**
-   - Token guard (`withinLimit`).
-   - Budget pre-flight guard (`hasBudgetForEstimated`).
+4. **Accounting**
+   - budget is updated using hub costs when available,
+   - fallback to estimated formula otherwise.
 
-5. **Remote verification**
-   - POST to `/verify` with `{ task: "categorize", answer: { prompt } }`.
-   - Response normalized to `DNG | NEU | INVALID`.
-   - Optional flag extracted from raw response.
+5. **Decision**
+   - accept item, fail iteration, retry-after-reset, refine prompt, or stop run.
 
-6. **Decision and persistence**
-   - Per-item results appended to iteration object.
-   - On failure: hypothesis inference + prompt refinement + hub reset.
-   - On success: save flag, best prompt, and outbox artifacts.
+6. **Persistence**
+   - append JSONL logs,
+   - update run trace JSON,
+   - update session/budget/best prompt/flag.
 
-### Key transformations and logic points
+### Key transformations
 
-- CSV schema flexibility: header alias matching for id/description columns.
-- Output normalization: robust trimming/cleanup before strict `DNG`/`NEU` validation.
-- Classification feedback shaping: only rejection-relevant items are fed to prompt engineer.
-- Progressive memory: engineer conversation persisted in `state/engineer_chat_<runId>.json`.
+- Response normalization from free-form hub payloads to strict internal `VerifyResult`.
+- Hypothesis derivation that distinguishes:
+  - actionable budget compression cases (mid-iteration exhaustion),
+  - non-actionable hub-state failures (0 accepted items).
+- PromptEngineer post-processing:
+  - normalize whitespace/quotes,
+  - enforce mandatory exception terms,
+  - apply compact or ultra-compact deterministic fallback.
 
 ### Data flow diagram
 
 ```mermaid
 flowchart LR
     A[Hub CSV] --> B[parseCsvItems]
-    B --> C[CsvItem[]]
-    C --> D[renderPrompt]
-    D --> E[TokenEstimator]
-    E --> F{within 100?}
-    F -- no --> X[iteration fail + hypothesis]
-    F -- yes --> G[BudgetManager pre-check]
-    G --> H{budget available?}
-    H -- no --> X
-    H -- yes --> I[Hub verifyPrompt]
-    I --> J[normalizeOutput + extractFlag]
-    J --> K{error/invalid?}
-    K -- yes --> X
-    K -- no --> L[item accepted]
-    L --> M{all items/flag?}
-    M -- no --> D
-    M -- yes --> N[save flag/session/budget/outbox]
-    X --> O[PromptEngineer.refine]
-    O --> P[Hub reset]
-    P --> C
+    B --> C[Prompt render]
+    C --> D[Token estimate + budget preflight]
+    D --> E{Can send?}
+    E -- no --> Z[Stop/Fail with trace reason]
+    E -- yes --> F[verifyPrompt]
+    F --> G{402/-910?}
+    G -- yes --> H[Immediate reset + one retry]
+    G -- no --> I[Normalize + usage parse]
+    H --> I
+    I --> J[Budget reconcile with hub usage]
+    J --> K{Accepted?}
+    K -- no --> L[Iteration fail + hypothesis]
+    K -- yes --> M{All items/flag?}
+    M -- no --> C
+    M -- yes --> N[Save success + outbox]
+    L --> O[Refine or skip/stop based on failure type]
 ```
 
 ---
 
 ## 5. Sequence Diagrams
 
-### Sequence 1: Main successful execution path
+### Sequence 1: Current main path (with bootstrap + pre-run reset)
 
 ```mermaid
 sequenceDiagram
-    participant U as Operator
-    participant CLI as index.ts
-    participant R as ExperimentRunner
-    participant H as HubClient
-    participant B as BudgetManager
-    participant S as SessionStateManager
-    participant T as TraceLogger
-
-    U->>CLI: npm run remote-experiment
-    CLI->>R: run()
-    R->>S: loadBudget(), saveSession(running)
-    R->>H: fetchFreshCsv()
-    H-->>R: CsvItem[]
-    loop each item
-        R->>R: renderPrompt(candidate,item)
-        R->>R: estimate tokens
-        R->>B: hasBudgetForEstimated()
-        B-->>R: true
-        R->>H: verifyPrompt(fullPrompt)
-        H-->>R: VerifyResult(normalized DNG/NEU)
-        R->>B: recordRequest(...)
-    end
-    R->>T: logExperiment(iteration)
-    R->>S: saveBestPrompt/saveSession/saveBudget
-    R->>S: saveFlag + saveToOutbox
-    R-->>U: success + flag
-```
-
-### Sequence 2: Failure, reset, and prompt refinement loop
-
-```mermaid
-sequenceDiagram
+    participant U as User
     participant R as ExperimentRunner
     participant H as HubClient
     participant P as PromptEngineer
-    participant O as OpenRouter
+    participant B as BudgetManager
     participant T as TraceLogger
 
-    R->>H: verifyPrompt(fullPrompt)
-    H-->>R: INVALID or error
-    R->>R: inferHypothesis(iteration)
-    R->>T: logExperiment + logTrace(iteration.todo)
-    R->>H: reset()
-    H-->>R: reset response
-    R->>P: refine(current, iteration, nextId, runId)
-    alt OPENROUTER_API_KEY present
-        P->>O: chat.completions(system + history + failure digest)
-        O-->>P: improved prefix
-    else missing key or API failure
-        P->>P: refineCandidate() fallback
+    U->>R: run remote-experiment
+    R->>T: startRun(runId)
+    R->>H: reset() pre-run
+    H-->>R: Balance renewed
+    R->>B: recordReset(...)
+    alt initial staticPrefix empty/placeholder
+      R->>P: refine(bootstrap iteration)
+      P-->>R: compact prefix
     end
-    P-->>R: next PromptCandidate
-    R->>T: logTrace(prompt.refined)
-    R->>R: start next iteration with fresh CSV
+    R->>H: fetchFreshCsv()
+    loop each item until fail/success
+      R->>H: verifyPrompt(prompt)
+      H-->>R: verify response
+      R->>B: recordRequestUsingHub(...)
+    end
+```
+
+### Sequence 2: 402 recovery path
+
+```mermaid
+sequenceDiagram
+    participant R as ExperimentRunner
+    participant H as HubClient
+    participant B as BudgetManager
+    participant T as TraceLogger
+
+    R->>H: verifyPrompt(item prompt)
+    H-->>R: 402 / code -910
+    R->>T: log verify.response
+    R->>B: recordRequestUsingHub(first failed call)
+    R->>H: reset() immediate recovery
+    H-->>R: Balance renewed
+    R->>B: recordReset(...)
+    R->>H: verifyPrompt(same item/same prompt retry once)
+    H-->>R: retry response
+    R->>B: recordRequestUsingHub(retry)
 ```
 
 ---
@@ -280,130 +247,123 @@ sequenceDiagram
 
 ### Folder structure
 
-- `src/` — all TypeScript source modules.
-- `state/` — runtime state and observability artifacts (`session.json`, `budget_state.json`, JSONL traces, CSV snapshots, flag).
-- `workspace/sessions/outbox/` — shared success artifacts (`flag.json`, `winning_prompt.md`).
-- `specs/` — original task/prompt requirements.
-- Root config: `package.json`, `tsconfig.json`, `.gitignore`, docs (`README.md`, `ARCHITECTURE.md`).
+- `src/` — application source
+- `state/` — runtime artifacts (`session.json`, `budget_state.json`, traces, CSV snapshots, engineer chat)
+- `state/runs/` — one pretty JSON trace per run
+- `workspace/sessions/outbox/` — shared winning artifacts (`flag.json`, `winning_prompt.md`)
+- `specs/` — task requirements
 
-### Key files and purpose
+### Key files and current responsibilities
 
-- `src/index.ts`: application bootstrap, mode parsing, dependency assembly.
-- `src/config.ts`: env schema validation and computed endpoint URLs.
-- `src/experimentRunner.ts`: core finite-loop orchestrator; defines success/failure semantics.
-- `src/hubClient.ts`: network client with retry/backoff and response normalization support.
-- `src/promptEngineer.ts`: iterative prompt-improvement engine with persistent chat history.
-- `src/prompting.ts`: initial candidate registry, prompt rendering, fallback refinement.
-- `src/csv.ts`: minimal CSV parser supporting quotes and escaped quotes.
-- `src/budgetManager.ts`: PP pricing model and budget controls.
-- `src/tokenEstimator.ts`: tokenizer integration and token-limit check.
-- `src/stateManager.ts`: read/write state JSON and outbox artifacts.
-- `src/traceLogger.ts`: append-only JSONL telemetry for trace and experiments.
-- `src/reset.ts`: convenience script to reset hub and local budget ledger.
+- `src/index.ts` — bootstraps env/config and starts runner.
+- `src/config.ts` — validated env flags, including:
+  - `RESUME_BUDGET_STATE`
+  - `FORCE_PROMPT_ENGINEER`
+- `src/experimentRunner.ts` — orchestration, recovery, fail-fast, hypothesis logic.
+- `src/hubClient.ts` — API client + usage extraction (`debug` and top-level fallback).
+- `src/promptEngineer.ts` — LLM refinement + strict compact/safety guards.
+- `src/budgetManager.ts` — estimated and hub-reconciled accounting methods.
+- `src/traceLogger.ts` — event JSONL + full per-run JSON.
+- `src/stateManager.ts` — persistence and outbox export.
 
-### Important functions/classes
+### Important functions/classes (current)
 
-- `ExperimentRunner.run()`: overall loop, scoring, best-prompt tracking, finalization.
-- `ExperimentRunner.runIteration()`: per-item execution with early-stop on first failure.
-- `HubClient.verifyPrompt()`: normalizes hub response into internal `VerifyResult`.
-- `PromptEngineer.refine()`: LLM call + fallback strategy + chat persistence.
-- `buildUserMessage()`: failure digest generator (signal-focused context packaging).
-- `BudgetManager.hasBudgetForEstimated()` + `recordRequest()`: pre-check and accounting.
-- `renderPrompt()`: cache-friendly prompt composition.
-- `parseCsvItems()`: robust mapping to `CsvItem` domain shape.
+- `ExperimentRunner.run()`:
+  - pre-run reset,
+  - bootstrap refinement,
+  - iteration control + stop conditions.
+- `ExperimentRunner.runIteration()`:
+  - item loop,
+  - verify error recovery,
+  - budget updates and failure outcomes.
+- `HubClient.verifyPrompt()`:
+  - normalize output,
+  - parse cost/token usage,
+  - return consistent `VerifyResult`.
+- `PromptEngineer.refine()`:
+  - build dynamic user message,
+  - call OpenRouter,
+  - sanitize/enforce compact fallback.
+- `BudgetManager.recordRequestUsingHub()`:
+  - consume hub usage/cost if present,
+  - estimator fallback when missing.
 
 ---
 
 ## 7. Key Logic / Algorithms
 
-### A. Iterative optimization loop with hard stop conditions
+### A. Iteration stop strategy
 
-`runIteration()` processes items sequentially and stops immediately when any of these occurs:
-- prompt too long (`> tokenLimit`),
-- budget pre-check fails,
-- hub response is unparseable (`INVALID`),
-- hub explicitly rejects classification.
+The run can stop early under multiple conditions:
+- repeated non-actionable hub budget/state failures,
+- insufficient remaining budget for even one probe verify,
+- budget exceeded before next refinement,
+- max iterations reached.
 
-This minimizes spend by avoiding useless requests after a known failing condition.
+This avoids spending iterations when outcome is already determined.
 
-### B. Prompt-cache-aware prompt construction
+### B. Hybrid budget model
 
-`renderPrompt()` keeps instructions static and item data dynamic-at-end:
-- same prefix reused across all items in an iteration,
-- maximizes potential cache hits for repeated prefix tokens,
-- directly supports reduced cached-token pricing model in `BudgetManager`.
+Budget logic now blends two sources:
+- **Primary:** hub-reported `input_cost/output_cost/tokens/cached_tokens`
+- **Fallback:** local estimate formula when hub usage fields are missing
 
-### C. Cost model with cached vs non-cached token pricing
+This greatly reduces drift between local guard behavior and hub billing reality.
 
-`BudgetManager` uses three rates:
-- input: `0.02 PP / 10 tokens`,
-- cached input: `0.01 PP / 10 tokens`,
-- output: `0.02 PP / 10 tokens`.
+### C. 402/-910 resilience
 
-`hasBudgetForEstimated()` mirrors `recordRequest()` math, enabling deterministic preflight budget gating.
+On hub “insufficient funds” during verify:
+- record the failed call cost,
+- perform immediate reset,
+- retry once for same item/prompt.
 
-### D. Error-to-hypothesis mapping for prompt refinement
+This handles inconsistent hub state right after resets.
 
-`inferHypothesis()` classifies failure causes into actionable categories:
-- format error,
-- token overflow,
-- reactor-specific mismatch,
-- generic hub mismatch/error.
+### D. Prompt compression under budget pressure
 
-This feeds `PromptEngineer` and fallback refinement logic.
+PromptEngineer is guided and constrained to produce compact prefixes:
+- target compact token budget,
+- deterministic compact fallback,
+- ultra-compact fallback for budget-failure hypotheses,
+- mandatory reactor/fuel exception enforcement.
 
-### E. Signal-focused feedback synthesis for the LLM engineer
+### E. Failure-aware refinement gating
 
-`buildUserMessage()` intentionally sends distilled feedback:
-- only rejected/invalid items,
-- compact reason strings,
-- worst-case token breakdown.
-
-This avoids overwhelming the model with noisy raw hub payloads and promotes generalizable improvements.
-
-### F. Hybrid refinement strategy (LLM-first, deterministic fallback)
-
-`PromptEngineer.refine()`:
-- uses OpenRouter when key is present and call succeeds,
-- otherwise falls back to local `refineCandidate()` heuristics,
-- preserves continuity by persisting conversation history.
+Refinement is executed only when failure is actionable.  
+Non-actionable hub-state failure patterns are traced and can terminate run quickly.
 
 ---
 
 ## 8. Observations & Gaps
 
-### Risks / unclear areas
+### Current strengths
 
-1. **Potential path inconsistency for state directory**
-   - Some modules resolve paths relative to `config.stateDir`; others are initialized with absolute `stateDir` from `index.ts`. It works with defaults, but mixed absolute/relative assumptions could cause drift if `STATE_DIR` changes unexpectedly.
+- Robust traceability (`trace.jsonl` + per-run JSON trace with step granularity).
+- Better runtime stability with reset+retry recovery and fail-fast stops.
+- Budget accounting now reflects hub costs when provided.
+- Prompt pipeline has explicit safety rails (exception enforcement + compact fallbacks).
 
-2. **Local expected-label heuristic may diverge from hub oracle**
-   - `expectedLocalLabel()` contains broad weapon/hazard regexes not guaranteed to match hub's internal ground truth; useful diagnostically, but can mislead iteration analysis.
+### Remaining risks
 
-3. **Fallback prompt refinement can accumulate repetitive text**
-   - `refineCandidate()` appends reactor/format clauses heuristically; repeated failures could inflate prefix or duplicate rules.
+1. **Hub consistency risk**
+   - Hub may still return `-910` unpredictably despite reset, forcing conservative retries/stops.
 
-4. **No explicit schema validation for hub JSON payloads**
-   - Parsing is defensive but permissive (`VerifyResponseShape`); malformed but syntactically valid responses might pass through with weak error semantics.
+2. **Prompt oscillation risk**
+   - Under tight budget, repeated ultra-compact fallback may converge to similar text with limited semantic gain.
 
-5. **Single-run file writes without locking**
-   - Concurrent runs in same `STATE_DIR` may interleave JSONL and overwrite JSON files (`session.json`, `best_prompt.json`).
+3. **No test harness yet**
+   - Critical behaviors (402 recovery, hub-usage reconciliation, fail-fast branches) rely on runtime validation rather than automated tests.
 
-### Improvement opportunities
+4. **Concurrent runs**
+   - Shared state files are still not lock-protected; parallel execution may interleave writes.
 
-- Normalize path handling by always storing/using absolute `stateDir` in `AppConfig`.
-- Add deduplication/compression for fallback-generated prefixes.
-- Introduce stricter runtime validation (e.g., zod schema) for hub `/verify` responses.
-- Add run-scoped filenames for session artifacts to support concurrent executions safely.
-- Add automated tests for:
-  - CSV parser edge cases,
-  - budget calculation correctness,
-  - iteration stop conditions and reset behavior,
-  - prompt-refinement fallback behavior.
+### Practical next improvements
 
-### Readability/scalability notes
-
-- Separation of concerns is strong for a small CLI project.
-- JSONL tracing provides good auditability and replay potential.
-- The architecture can evolve into queue-based or service-based execution with relatively low refactor cost because orchestration and adapters are already modular.
+- Add focused unit/integration tests for:
+  - `recordRequestUsingHub` reconciliation correctness,
+  - 402 recovery branch,
+  - fail-fast stop conditions,
+  - PromptEngineer compact fallback logic.
+- Add optional config for repeated-hub-issue threshold.
+- Add runtime metrics summary (accepted items per PP, average token cost per request) in run trace summary.
 
