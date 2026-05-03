@@ -1,0 +1,24 @@
+{
+  "name": "ai-devs-4-s02e02-electricity",
+  "version": "1.0.0",
+  "private": true,
+  "description": "AI Devs 4 - S02E02 - Electricity puzzle solver (function-calling agent + per-tile vision)",
+  "type": "module",
+  "scripts": {
+    "start": "tsx src/index.ts",
+    "solve": "tsx src/index.ts",
+    "reset": "tsx src/index.ts --reset-only",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "dotenv": "^16.4.5",
+    "openai": "^4.77.0",
+    "sharp": "^0.33.5",
+    "zod": "^3.23.8"
+  },
+  "devDependencies": {
+    "@types/node": "^20.14.0",
+    "tsx": "^4.19.2",
+    "typescript": "^5.6.3"
+  }
+}
