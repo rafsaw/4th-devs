@@ -4,8 +4,28 @@ Four text chunking strategies compared side-by-side.
 
 ## Run
 
+All four strategies (from repo root):
+
 ```bash
 npm run lesson7:chunking
+```
+
+Topics only — one LLM call, skips characters, separators, and context (useful when debugging timeouts or token use). Use the dedicated npm script; **do not** use `npm run lesson7:chunking -- --topics` — current npm versions treat `--topics` as an npm CLI flag (`Unknown cli config "--topics"`), so it is not passed to Node and the full four-strategy run starts instead.
+
+```bash
+npm run lesson7:chunking:topics
+```
+
+From the repo root (same as the script above):
+
+```bash
+node ./02_02_chunking/app.js --topics
+```
+
+From `02_02_chunking/`:
+
+```bash
+node app.js --topics
 ```
 
 ## Required setup
@@ -15,7 +35,7 @@ npm run lesson7:chunking
 
 ## What it does
 
-1. Reads `workspace/example.md`
+1. Reads the source file configured in `app.js` as `INPUT_REL` (resolved from the lesson folder so the app can be run from the repo root or from `02_02_chunking/`)
 2. Runs four chunking strategies on the same text:
    - **Characters** — fixed-size windows with overlap
    - **Separators** — splits on headings and paragraph boundaries

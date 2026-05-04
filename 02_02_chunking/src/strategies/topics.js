@@ -6,6 +6,9 @@
 import { chat } from "../api.js";
 import { buildHeadingIndex, findSection } from "../utils.js";
 
+/** One call returns the full document split as JSON — large payloads need more than default client timeout. */
+const TOPICS_CHAT_TIMEOUT_MS = 180_000;
+
 export const chunkByTopics = async (text, { source } = {}) => {
   const raw = await chat(
     text,
@@ -13,9 +16,20 @@ export const chunkByTopics = async (text, { source } = {}) => {
 
 Rules:
 - Each chunk must contain ONE coherent topic or idea
-- Preserve the original text — do NOT summarise or rewrite
-- Return a JSON array of objects: [{ "topic": "short topic label", "content": "original text for this topic" }]
-- Return ONLY the JSON array, no markdown fences or explanation`
+- Preserve the original text exactly — do NOT summarise, rewrite, or translate
+- Keep the SAME language as the input text for both "topic" and "content"
+- The "topic" must be a short label (2-6 words) in the SAME language as the input
+- Do NOT mix languages
+
+Output format:
+- Return a JSON array of objects:
+  [{ "topic": "short topic label", "content": "original text for this topic" }]
+
+Output rules:
+- Return ONLY the JSON array
+- No markdown fences, no explanations, no extra text`,
+    undefined,
+    { timeoutMs: TOPICS_CHAT_TIMEOUT_MS },
   );
 
   let parsed;
