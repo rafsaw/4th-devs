@@ -1,0 +1,8 @@
+{
+  "name": "02_03_zadanie-failure",
+  "type": "module",
+  "private": true,
+  "scripts": {
+    "start": "node --env-file=../.env app.js"
+  }
+}
