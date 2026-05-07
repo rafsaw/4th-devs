@@ -1,0 +1,8 @@
+{FLG:SQUASHIT}
+
+---
+Pełna odpowiedź verify:
+{
+  "code": 0,
+  "message": "{FLG:SQUASHIT}"
+}
