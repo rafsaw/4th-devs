@@ -1,0 +1,14 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(cls *)",
+      "Bash(npm install *)",
+      "Bash(grep -E \"^\\(openai|tsx|dotenv|typescript\\)$\")",
+      "Bash(npx tsx *)",
+      "Bash(npx tsc *)",
+      "Bash(tee output/run.log)",
+      "Bash(git add *)",
+      "Bash(git commit *)"
+    ]
+  }
+}
