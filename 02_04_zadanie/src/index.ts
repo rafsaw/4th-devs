@@ -21,6 +21,28 @@ interface RunResult {
   iterations: number;
   finishReason: string;
   conversation: ChatMessage[];
+  llmTrace: IterationTrace[];
+}
+
+interface ToolExecutionTrace {
+  toolCallId: string;
+  name: string;
+  args: unknown;
+  result: {
+    text: string;
+    flag?: string | null;
+    finish?: string;
+  };
+}
+
+interface IterationTrace {
+  iteration: number;
+  model: string;
+  requestMessages: ChatMessage[];
+  responseMessage: OpenAI.Chat.Completions.ChatCompletionMessage;
+  usage?: OpenAI.Completions.CompletionUsage;
+  toolExecutions: ToolExecutionTrace[];
+  note: string;
 }
 
 function sleep(ms: number): Promise<void> {
@@ -137,8 +159,11 @@ async function run(): Promise<RunResult> {
   let flag: string | null = null;
   let finishReason = "max_iter";
   let iter = 0;
+  const llmTrace: IterationTrace[] = [];
 
   for (iter = 1; iter <= config.maxIter; iter++) {
+    const requestMessages = JSON.parse(JSON.stringify(conversation)) as ChatMessage[];
+
     const completion = await client.chat.completions.create({
       model: config.model,
       messages: conversation,
@@ -151,6 +176,17 @@ async function run(): Promise<RunResult> {
       finishReason = "no_message";
       break;
     }
+    const iterTrace: IterationTrace = {
+      iteration: iter,
+      model: config.model,
+      requestMessages,
+      responseMessage: msg,
+      usage: completion.usage,
+      toolExecutions: [],
+      note:
+        "Trace pokazuje wejscie/wyjscie modelu i tool_calls. Nie zawiera jawnego chain-of-thought; decyzje modelu sa inferowane z przejsc miedzy krokami.",
+    };
+    llmTrace.push(iterTrace);
     conversation.push(msg as ChatMessage);
 
     const toolCalls = msg.tool_calls ?? [];
@@ -179,6 +215,12 @@ async function run(): Promise<RunResult> {
           text: JSON.stringify({ ok: false, error: String((e as Error).message ?? e) }),
         };
       }
+      iterTrace.toolExecutions.push({
+        toolCallId: call.id,
+        name,
+        args,
+        result: toolResult,
+      });
 
       conversation.push({
         role: "tool",
@@ -192,7 +234,7 @@ async function run(): Promise<RunResult> {
       }
       if (toolResult.finish) {
         finishReason = `finish: ${toolResult.finish}`;
-        return { flag, iterations: iter, finishReason, conversation };
+        return { flag, iterations: iter, finishReason, conversation, llmTrace };
       }
     }
 
@@ -205,7 +247,7 @@ async function run(): Promise<RunResult> {
     }
   }
 
-  return { flag, iterations: iter, finishReason, conversation };
+  return { flag, iterations: iter, finishReason, conversation, llmTrace };
 }
 
 async function main() {
