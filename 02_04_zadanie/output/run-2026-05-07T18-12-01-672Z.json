@@ -2,6 +2,7 @@
   "flag": "{FLG:TRAITOR}",
   "iterations": 6,
   "finishReason": "finish: Otrzymano flagę {FLG:TRAITOR} po poprawnym zidentyfikowaniu daty ataku, hasła do systemu oraz kodu potwierdzenia z wiadomości e-mail.",
+  "model": "google/gemini-3-flash-preview",
   "conversation": [
     {
       "role": "system",
