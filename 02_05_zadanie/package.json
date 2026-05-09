@@ -1,0 +1,8 @@
+{
+  "name": "02_05_zadanie",
+  "type": "module",
+  "scripts": {
+    "start": "node app.js",
+    "dev": "node --watch app.js"
+  }
+}
