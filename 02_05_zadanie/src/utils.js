@@ -33,8 +33,17 @@ const findJsonObject = (text) => {
   }
 };
 
-export const parseSector = (text) => {
+export const parseJsonObject = (text) => {
   const parsed = findJsonObject(text);
+  if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) {
+    return null;
+  }
+
+  return parsed;
+};
+
+export const parseSector = (text) => {
+  const parsed = parseJsonObject(text);
   if (!parsed || typeof parsed !== "object") {
     return null;
   }

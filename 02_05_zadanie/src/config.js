@@ -99,6 +99,20 @@ const parseModel = (value) => {
   return { provider, model };
 };
 
+const normalizeModelForProvider = (parsed, provider, fallbackModel) => {
+  if (!parsed) {
+    return fallbackModel;
+  }
+
+  if (parsed.provider && parsed.provider !== provider) {
+    return fallbackModel;
+  }
+
+  return provider === "openrouter" && !parsed.model.includes("/")
+    ? `openai/${parsed.model}`
+    : parsed.model;
+};
+
 const determineModelProvider = () => {
   const forced = process.env.DRONE_AI_PROVIDER?.trim().toLowerCase();
   if (forced === "openrouter" || forced === "openai") {
@@ -135,6 +149,11 @@ const pickModel = () => {
   }
 
   return defaultModel;
+};
+
+const resolveModelFromEnv = (envName, fallbackModel) => {
+  const parsed = parseModel(process.env[envName] ?? "");
+  return normalizeModelForProvider(parsed, provider, fallbackModel);
 };
 
 const buildMapUrl = () => {
@@ -174,21 +193,39 @@ if (!modelApiKey) {
 export const config = {
   ag3ntsApiKey: AG3NTS_API_KEY,
   mapUrl: buildMapUrl(),
+  droneDocsUrl: process.env.DRONE_DOCS_URL?.trim() || "https://hub.ag3nts.org/dane/drone.html",
   verifyEndpoint: process.env.DRONE_VERIFY_ENDPOINT?.trim() || "https://hub.ag3nts.org/verify",
   taskName: "drone",
   powerPlantCode: "PWR6132PL",
   provider,
   model: pickModel(),
+  models: (() => {
+    const baseModel = pickModel();
+    const mapModel = resolveModelFromEnv("DRONE_MAP_MODEL", baseModel);
+    const operatorModel = resolveModelFromEnv("DRONE_OPERATOR_MODEL", baseModel);
+    const docsModel = resolveModelFromEnv("DRONE_DOCS_MODEL", operatorModel);
+
+    return {
+      map: mapModel,
+      docs: docsModel,
+      operator: operatorModel
+    };
+  })(),
   modelApiKey,
   responsesEndpoint: provider === "openrouter"
     ? "https://openrouter.ai/api/v1/responses"
     : "https://api.openai.com/v1/responses",
   extraModelHeaders: provider === "openrouter" ? OPENROUTER_EXTRA_HEADERS : {},
   mapAgent: {
-    maxAttempts: asPositiveInt(process.env.DRONE_MAP_AGENT_ATTEMPTS, 3)
+    maxAttempts: asPositiveInt(process.env.DRONE_MAP_AGENT_ATTEMPTS, 3),
+    maxOutputTokens: asPositiveInt(process.env.DRONE_MAP_MAX_OUTPUT_TOKENS, 300)
   },
   droneAgent: {
     maxAttempts: asPositiveInt(process.env.DRONE_AGENT_MAX_ATTEMPTS, 12),
+    docsMaxAttempts: asPositiveInt(process.env.DRONE_DOCS_MAX_ATTEMPTS, 2),
+    maxOutputTokens: asPositiveInt(process.env.DRONE_OPERATOR_MAX_OUTPUT_TOKENS, 700),
+    docsMaxOutputTokens: asPositiveInt(process.env.DRONE_DOCS_MAX_OUTPUT_TOKENS, 900),
+    reflectionMaxOutputTokens: asPositiveInt(process.env.DRONE_REFLECTION_MAX_OUTPUT_TOKENS, 450),
     resetAfterFailures: asPositiveInt(process.env.DRONE_AGENT_RESET_AFTER, 3),
     hardResetPayload: (() => {
       const raw = process.env.DRONE_HARD_RESET_PAYLOAD?.trim();

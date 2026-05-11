@@ -27,7 +27,8 @@ export const callModel = async ({
   input,
   instructions,
   model = config.model,
-  maxOutputTokens = 2000
+  maxOutputTokens = 2000,
+  temperature
 }) => {
   const payload = {
     model,
@@ -35,6 +36,10 @@ export const callModel = async ({
     instructions,
     max_output_tokens: maxOutputTokens
   };
+
+  if (typeof temperature === "number") {
+    payload.temperature = temperature;
+  }
 
   const response = await fetch(config.responsesEndpoint, {
     method: "POST",
@@ -67,7 +72,9 @@ export const callModel = async ({
 };
 
 export const printModelInfo = () => {
-  console.log(`[llm] provider=${config.provider} model=${config.model}`);
+  console.log(
+    `[llm] provider=${config.provider} mapModel=${config.models.map} docsModel=${config.models.docs} operatorModel=${config.models.operator}`
+  );
 };
 
 export const safeModelCall = async (params, context) => {

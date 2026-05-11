@@ -28,7 +28,10 @@ export const runMapAnalyst = async ({ trace } = {}) => {
 
     const userPrompt = buildPrompt(attempt, previousOutput);
     const result = await safeModelCall({
+      model: config.models.map,
+      maxOutputTokens: config.mapAgent.maxOutputTokens,
       instructions: MAP_ANALYST_INSTRUCTIONS,
+      temperature: 0,
       input: [
         {
           role: "user",

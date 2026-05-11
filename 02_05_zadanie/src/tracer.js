@@ -9,26 +9,35 @@ export const createRunTrace = (config) => ({
   startedAt: new Date().toISOString(),
   provider: config.provider,
   model: config.model,
-  note: "Trace pokazuje wejscie/wyjscie modelu i drone API. Klucz API jest zamaskowany. Map analyst: kazda proba ma request i responseText. Drone operator: baselineCandidates to szablon z kodu (bez LLM); iterations — llmInvolved false przy probie 1 (baseline), true gdy model generuje plan; przy sukcesie wylacznie na baseline planningNotes wyjasnia brak LLM.",
+  note: "Trace pokazuje wejscie/wyjscie modelu i drone API. Klucz API jest zamaskowany. Map analyst: kazda proba ma request i responseText. Drone operator: najpierw pobranie i analiza drone.html przez LLM, potem iteracyjne planowanie instructions przez LLM na podstawie dokumentacji i feedbacku API.",
   mapAnalyst: {
     attempts: []
   },
   droneOperator: {
-    baselineCandidates: [],
+    docsAnalysisAttempts: [],
+    reflections: [],
     iterations: []
   }
 });
 
-export const saveTrace = async (trace, { sector, flag, attempts }) => {
+export const saveTrace = async (trace, {
+  sector,
+  flag,
+  attempts,
+  status = "success",
+  errorMessage = null
+}) => {
   await mkdir(OUTPUT_DIR, { recursive: true });
   const stamp = new Date().toISOString().replace(/[:.]/g, "-");
   const full = {
     ...trace,
     finishedAt: new Date().toISOString(),
     result: {
+      status,
       sector: sector ?? null,
       flag: flag ?? null,
-      totalAttempts: attempts?.length ?? 0
+      totalAttempts: attempts?.length ?? 0,
+      errorMessage
     }
   };
   const filePath = path.join(OUTPUT_DIR, `run-${stamp}.json`);
