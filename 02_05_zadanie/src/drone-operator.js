@@ -59,16 +59,15 @@ const buildIterationPrompt = ({ sector, attempt, feedback, previousInstructions 
 };
 
 const askOperatorForInstructions = async ({ sector, attempt, feedback, previousInstructions }) => {
+  const userPrompt = buildIterationPrompt({ sector, attempt, feedback, previousInstructions });
+
   const result = await safeModelCall({
     instructions: OPERATOR_INSTRUCTIONS,
     input: [
       {
         role: "user",
         content: [
-          {
-            type: "input_text",
-            text: buildIterationPrompt({ sector, attempt, feedback, previousInstructions })
-          }
+          { type: "input_text", text: userPrompt }
         ]
       }
     ]
@@ -79,29 +78,62 @@ const askOperatorForInstructions = async ({ sector, attempt, feedback, previousI
     throw new Error(`Drone operator returned invalid JSON plan: ${result.text}`);
   }
 
-  return parsed.instructions;
+  return {
+    instructions: parsed.instructions,
+    userPrompt,
+    rawText: result.text,
+    requestPayload: result.requestPayload,
+    responseRaw: result.raw
+  };
 };
 
-export const runDroneOperator = async ({ sector }) => {
+export const runDroneOperator = async ({ sector, trace }) => {
   let consecutiveFailures = 0;
   let feedback = "";
   let previousInstructions = null;
   const attempts = [];
   let activeSector = sector;
 
+  if (trace?.droneOperator) {
+    trace.droneOperator.systemInstructions = OPERATOR_INSTRUCTIONS;
+    trace.droneOperator.howInstructionsAreChosen =
+      "LLM operatora jest wywolywany tylko od 2. proby w petli glownej (attempt>1). Dostaje w user prompt: sektor, cel lotu, numer proby, poprzednie instructions (JSON) oraz komunikat bledu z Drone API — na tej podstawie proponuje nowy JSON instructions. Nie ma zewnetrznego rankingu ani 'najlepszej' listy: to iteracyjna naprawa na feedbacku symulatora. Proba 1 w petli i cale przejscie baselineCandidates to szablon z kodu (buildBaselineInstructions), bez LLM.";
+  }
+
   for (const candidate of getInitialSectorCandidates(sector)) {
     const instructions = buildBaselineInstructions(candidate);
     const verifyResult = await callDroneApi(instructions);
 
-    attempts.push({
+    const entry = {
       attempt: attempts.length + 1,
       instructions,
       httpStatus: verifyResult.httpStatus,
       success: verifyResult.success,
       message: verifyResult.normalizedMessage
+    };
+    attempts.push(entry);
+
+    trace?.droneOperator.baselineCandidates.push({
+      source: "deterministic_baseline",
+      candidate,
+      instructions,
+      droneApi: {
+        httpStatus: verifyResult.httpStatus,
+        success: verifyResult.success,
+        flag: verifyResult.flag ?? null,
+        message: verifyResult.normalizedMessage
+      }
     });
 
     if (verifyResult.success && verifyResult.flag) {
+      if (trace?.droneOperator) {
+        trace.droneOperator.planningNotes = {
+          llmCallsForInstructionPlan: 0,
+          resolvedBy: "baseline_candidate",
+          detail:
+            "Operator LLM nie byl uruchomiony — wystarczyla deterministyczna sekwencja z buildBaselineInstructions dla tego kandydata sektora."
+        };
+      }
       return {
         flag: verifyResult.flag,
         finalResponse: verifyResult.data,
@@ -118,14 +150,28 @@ export const runDroneOperator = async ({ sector }) => {
   for (let attempt = 1; attempt <= config.droneAgent.maxAttempts; attempt += 1) {
     console.log(`[drone-operator] attempt ${attempt}/${config.droneAgent.maxAttempts}`);
 
-    const instructions = attempt === 1
-      ? buildBaselineInstructions(activeSector)
-      : await askOperatorForInstructions({
+    let llmRequest = null;
+    let llmResponse = null;
+    let llmUserPrompt = null;
+    let llmResponseText = null;
+    let instructions;
+    const llmInvolved = attempt > 1;
+
+    if (attempt === 1) {
+      instructions = buildBaselineInstructions(activeSector);
+    } else {
+      const operatorResult = await askOperatorForInstructions({
         sector: activeSector,
         attempt,
         feedback,
         previousInstructions
       });
+      instructions = operatorResult.instructions;
+      llmRequest = operatorResult.requestPayload;
+      llmResponse = operatorResult.responseRaw;
+      llmUserPrompt = operatorResult.userPrompt;
+      llmResponseText = operatorResult.rawText;
+    }
 
     const verifyResult = await callDroneApi(instructions);
 
@@ -137,7 +183,35 @@ export const runDroneOperator = async ({ sector }) => {
       message: verifyResult.normalizedMessage
     });
 
+    trace?.droneOperator.iterations.push({
+      attempt,
+      llmInvolved,
+      userPrompt: llmInvolved ? llmUserPrompt : null,
+      llmResponseText: llmInvolved ? llmResponseText : null,
+      llmRequest,
+      llmResponse,
+      parsedInstructions: instructions,
+      droneApi: {
+        httpStatus: verifyResult.httpStatus,
+        success: verifyResult.success,
+        flag: verifyResult.flag ?? null,
+        message: verifyResult.normalizedMessage
+      },
+      hardResetTriggered: false
+    });
+
     if (verifyResult.success && verifyResult.flag) {
+      if (trace?.droneOperator) {
+        const llmCalls = trace.droneOperator.iterations.filter((i) => i.llmInvolved).length;
+        trace.droneOperator.planningNotes = {
+          llmCallsForInstructionPlan: llmCalls,
+          resolvedBy: "main_loop",
+          detail:
+            llmCalls > 0
+              ? "Co najmniej jedna lista instructions pochodzila z LLM (na podstawie feedbacku API)."
+              : "Sukces na pierwszej iteracji petli — byl to baseline z kodu, bez wywolania LLM operatora."
+        };
+      }
       return {
         flag: verifyResult.flag,
         finalResponse: verifyResult.data,
@@ -157,6 +231,10 @@ export const runDroneOperator = async ({ sector }) => {
       consecutiveFailures = 0;
       feedback = "Po reset ustaw stan od zera i zaproponuj minimalna sekwencje.";
       previousInstructions = null;
+
+      if (trace?.droneOperator.iterations.length > 0) {
+        trace.droneOperator.iterations[trace.droneOperator.iterations.length - 1].hardResetTriggered = true;
+      }
     }
   }
 

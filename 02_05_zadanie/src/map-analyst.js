@@ -20,19 +20,20 @@ ${previousOutput}
 Sproboj ponownie. Wymagany format: {"column": N, "row": M}`;
 };
 
-export const runMapAnalyst = async () => {
+export const runMapAnalyst = async ({ trace } = {}) => {
   let previousOutput = "";
 
   for (let attempt = 1; attempt <= config.mapAgent.maxAttempts; attempt += 1) {
     console.log(`[map-analyst] attempt ${attempt}/${config.mapAgent.maxAttempts}`);
 
+    const userPrompt = buildPrompt(attempt, previousOutput);
     const result = await safeModelCall({
       instructions: MAP_ANALYST_INSTRUCTIONS,
       input: [
         {
           role: "user",
           content: [
-            { type: "input_text", text: buildPrompt(attempt, previousOutput) },
+            { type: "input_text", text: userPrompt },
             { type: "input_image", image_url: config.mapUrl }
           ]
         }
@@ -40,6 +41,25 @@ export const runMapAnalyst = async () => {
     }, "Map analyst failed");
 
     const sector = parseSector(result.text);
+
+    trace?.mapAnalyst.attempts.push({
+      attempt,
+      requestPayload: {
+        ...result.requestPayload,
+        input: (result.requestPayload?.input ?? []).map((msg) => ({
+          ...msg,
+          content: (msg.content ?? []).map((part) =>
+            part.type === "input_image"
+              ? { ...part, image_url: part.image_url?.replace(config.ag3ntsApiKey, "***") }
+              : part
+          )
+        }))
+      },
+      responseRaw: result.raw,
+      responseText: result.text,
+      parsedSector: sector ?? null
+    });
+
     if (sector) {
       console.log(`[map-analyst] resolved sector -> column=${sector.column}, row=${sector.row}`);
       return sector;

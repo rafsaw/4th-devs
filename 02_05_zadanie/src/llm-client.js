@@ -61,7 +61,8 @@ export const callModel = async ({
 
   return {
     text: extractResponseText(data),
-    raw: data
+    raw: data,
+    requestPayload: payload
   };
 };
 
