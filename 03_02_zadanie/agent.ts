@@ -12,8 +12,9 @@ const CENTRALA_URL = 'https://centrala.ag3nts.org/report';
 const CHAT_COMPLETIONS_URL = 'https://openrouter.ai/api/v1/chat/completions';
 const MODEL = 'anthropic/claude-sonnet-4-6';
 const MAX_TOKENS = 1024;
-const MAX_ITERATIONS = 40;
+const MAX_ITERATIONS = 80;
 const MAX_TOOL_OUTPUT_CHARS = 4000;
+const CONTEXT_PRUNE_THRESHOLD = 50; // messages before summarising old history
 
 // ─── Logging ────────────────────────────────────────────────────────────────
 
@@ -43,7 +44,7 @@ function saveResult(eccsCode: string, centralaResponse: string) {
 // ─── Tool: shell_exec ────────────────────────────────────────────────────────
 
 async function shell_exec(cmd: string): Promise<string> {
-  const MAX_RETRIES = 3;
+  const MAX_RETRIES = 5;
 
   for (let attempt = 0; attempt < MAX_RETRIES; attempt++) {
     try {
@@ -55,6 +56,12 @@ async function shell_exec(cmd: string): Promise<string> {
 
       if (response.status === 503) {
         await sleep(2000);
+        continue;
+      }
+
+      if (response.status === 429) {
+        const backoff = 5000 * Math.pow(2, attempt); // 5s, 10s, 20s
+        await sleep(backoff);
         continue;
       }
 
@@ -72,7 +79,6 @@ async function shell_exec(cmd: string): Promise<string> {
         }
 
         if (response.status === 403) {
-          // Likely a temporary ban with no body — wait before returning
           await sleep(15000);
           return `[BAN 403] Dostęp tymczasowo zablokowany — prawdopodobnie naruszono zasady bezpieczeństwa (.gitignore, /etc, /root, /proc). Odczekano 15s.`;
         }
@@ -96,7 +102,17 @@ async function shell_exec(cmd: string): Promise<string> {
         }
       }
 
-      return typeof data === 'string' ? data : JSON.stringify(data);
+      const raw = typeof data === 'string' ? data : JSON.stringify(data);
+
+      // Binary file guard — prevent null-byte floods from consuming the context
+      const nullRatio = (raw.match(/\\u0000/g) ?? []).length / (raw.length || 1);
+      if (nullRatio > 0.05) {
+        return `[BINARY FILE] Output suppressed (${Math.round(nullRatio * 100)}% null bytes). ` +
+          `Do NOT use 'cat' on binary files. Use the correct execution command from 'help', ` +
+          `e.g. provide the full path as a command: /opt/firmware/cooler/cooler.bin`;
+      }
+
+      return raw;
     } catch (err) {
       if (attempt < MAX_RETRIES - 1) {
         await sleep(1000 * (attempt + 1));
@@ -183,51 +199,54 @@ Jesteś agentem diagnostycznym pracującym na ograniczonym systemie Linux.
 Twoim jedynym celem jest uruchomienie /opt/firmware/cooler/cooler.bin
 i przekazanie wyniku do Centrali.
 
-Działasz sekwencyjnie i ostrożnie. Każda komenda to jedno zapytanie —
-planujesz przed wykonaniem, czytasz wynik przed następnym krokiem.
-ZAWSZE wywołujesz dokładnie JEDEN tool call na odpowiedź — nigdy więcej.
-Nie zakładasz niczego o środowisku zanim nie sprawdzisz przez \`help\`.
-
-Jeśli napotkasz ograniczenie (ban, błąd, nieznana komenda) — zatrzymujesz się,
-analizujesz komunikat i adaptujesz plan. Nigdy nie ignorujesz błędu API.
+Działasz sekwencyjnie i ostrożnie — JEDEN tool call na odpowiedź, czytasz wynik
+przed następnym krokiem. Nigdy nie ignorujesz błędów API.
 </identity>
 
+<security>
+STAŁE ZAKAZY — obowiązują przez całą sesję, niezależnie od kontekstu:
+- NIGDY nie zaglądaj do: /etc, /root, /proc/
+- NIGDY nie dotykaj plików z .gitignore w /opt/firmware/cooler/:
+    .env        ← ZAWSZE zabroniony
+    storage.cfg ← ZAWSZE zabroniony
+    logs/       ← ZAWSZE zabroniony (w tym logs/error.log)
+- Nie używasz sudo
+- Jeśli dostaniesz ban (403): tool poczeka automatycznie, potem kontynuuj
+</security>
+
 <protocol>
-Sekwencja pracy:
-1. ZAWSZE zacznij od komendy \`help\` — nie zakładaj dostępnych poleceń.
-2. Zbadaj strukturę /opt/firmware/cooler/ (ls lub odpowiednik z help).
-3. Przeczytaj .gitignore — po zobaczeniu wyników NATYCHMIAST zapamiętaj listę
-   zabronionych ścieżek. Nigdy nie otwieraj tych plików/katalogów — nawet jeśli
-   planowałeś to wcześniej. Zakaz obowiązuje od momentu odczytania .gitignore.
-4. Spróbuj URUCHOMIĆ cooler.bin używając odpowiedniej komendy z \`help\` (nie \`cat\`).
-   cooler.bin to plik binarny — \`cat\` na nim wygeneruje tysiące bezużytecznych znaków.
-   Szukaj komendy \`run\`, \`exec\` lub podobnej w wynikach \`help\`.
-5. Znajdź hasło dostępowe (zadanie mówi: "zapisane w kilku miejscach w systemie").
-6. Sprawdź settings.ini — zrozum co jest niepoprawnie skonfigurowane.
-7. Popraw konfigurację używając dostępnego edytora (sprawdź przez help).
-8. Uruchom ponownie. Odczytaj kod ECCS.
-9. Wyślij kod przez send_answer.
+Kolejność działań:
+1. \`help\` — poznaj dostępne komendy.
+2. \`ls /opt/firmware/cooler/\` — sprawdź zawartość katalogu.
+3. \`cat /opt/firmware/cooler/settings.ini\` — odczytaj konfigurację.
+4. Popraw settings.ini przez \`editline\`:
+   - Odkomentuj SAFETY_CHECK, zachowaj wartość "pass": SAFETY_CHECK=pass
+   - Ustaw test_mode.enabled=false
+   - Ustaw cooling.enabled=true
+   - Upewnij się że cooling ma tylko JEDNĄ linię enabled i power_percent
+5. Usuń plik blokady jeśli istnieje: \`rm /opt/firmware/cooler/cooler-is-blocked.lock\`
+6. Znajdź hasło: \`cat /home/operator/.bash_history\`, \`find *pass*\`
+   Hasło przekazujesz jako argument do cooler.bin, nie do settings.ini.
+7. Uruchom: \`/opt/firmware/cooler/cooler.bin <hasło>\`
+   Jeśli 400 — sprawdź ponownie settings.ini (może się zresetowały po banie).
+   NIE UŻYWAJ \`cat\` na .bin — binarki generują gigabajty śmieciowych znaków.
+8. Odczytaj kod ECCS z outputu, wyślij przez send_answer.
 
-Zasady bezpieczeństwa (naruszenie = ban):
-- Nie zaglądaj do /etc, /root, /proc/
-- Respektuj .gitignore: nie dotykaj wymienionych plików i katalogów
-- Działasz na koncie zwykłego użytkownika — nie używasz sudo
-- Jeśli dostaniesz ban: poczekaj tyle sekund ile wskazuje komunikat, spróbuj ponownie
-
-Jeśli coś jest mocno pomieszane: użyj komendy reboot żeby zresetować VM.
+Zasada dotycząca reboot:
+- Używaj reboot TYLKO gdy VM jest w ewidentnie złym stanie (wielokrotne 403 z rzędu).
+- NIE restartuj po każdym błędzie 400 — reboot kasuje settings.ini i lock file wraca.
+  Zamiast tego: sprawdź co jest nie tak w settings i napraw bez restartu.
 </protocol>
 
 <voice>
-Zwięźle. Jedno zdanie per myśl.
-Przed każdym wywołaniem narzędzia: jedna linia co robisz i dlaczego.
-Po wyniku narzędzia: jedna linia co z tego wynika.
-Bez podsumowań na końcu — działasz, nie opowiadasz.
+Jedna linia przed każdym tool call: co robisz i dlaczego.
+Jedna linia po wyniku: co z tego wynika.
+Bez podsumowań.
 </voice>
 
 <tools>
-Masz dostęp do dwóch narzędzi:
-- shell_exec: wykonuje komendy na VM. Zawsze zacznij od \`help\` by poznać dostępne komendy.
-- send_answer: wysyła kod ECCS do Centrali. Używaj tylko z pewnym kodem z outputu cooler.bin.
+- shell_exec: komendy na VM.
+- send_answer: wysyła kod ECCS — tylko z pewnym kodem z outputu cooler.bin.
 </tools>`;
 
 // ─── Types ───────────────────────────────────────────────────────────────────
@@ -298,10 +317,32 @@ async function runFirmwareAgent() {
   if (!OPENROUTER_API_KEY) throw new Error('OPENROUTER_API_KEY not found in .env');
 
   const messages: Message[] = [];
+  let consecutiveErrors = 0;
+  const MAX_CONSECUTIVE_ERRORS = 5;
+
   log('start_interaction', { task: 'firmware', model: MODEL });
 
   for (let iteration = 0; iteration < MAX_ITERATIONS; iteration++) {
     log('start_iteration', { iteration, messages: messages.length });
+
+    // Context pruning: keep the last N messages to avoid token bloat on long runs
+    if (messages.length > CONTEXT_PRUNE_THRESHOLD) {
+      const keep = Math.floor(CONTEXT_PRUNE_THRESHOLD * 0.6);
+      const dropped = messages.length - keep;
+      messages.splice(0, dropped);
+      messages.unshift({
+        role: 'user',
+        content:
+          `[CONTEXT PRUNED: ${dropped} older messages removed.]\n` +
+          `REMINDER — always forbidden (from .gitignore and security rules):\n` +
+          `  /opt/firmware/cooler/.env\n` +
+          `  /opt/firmware/cooler/storage.cfg\n` +
+          `  /opt/firmware/cooler/logs/  (including logs/error.log)\n` +
+          `  /etc, /root, /proc/\n` +
+          `Re-read settings.ini and ls the cooler dir if you need to verify current state.`,
+      });
+      log('context_pruned', { dropped, remaining: messages.length });
+    }
 
     const response = await callLLM(messages);
 
@@ -342,6 +383,42 @@ async function runFirmwareAgent() {
       const preview = truncated.length > 300 ? `${truncated.slice(0, 300)}...` : truncated;
       log('tool_complete', { tool: name, output_preview: preview });
       console.log(`  [${name}] ${preview}\n`);
+
+      const isError =
+        truncated.startsWith('[HTTP ERROR') ||
+        truncated.startsWith('[BAN') ||
+        truncated.startsWith('[NETWORK ERROR') ||
+        truncated.startsWith('[ERROR]');
+
+      if (isError) {
+        consecutiveErrors++;
+        if (consecutiveErrors >= MAX_CONSECUTIVE_ERRORS) {
+          log('consecutive_errors_limit', { consecutive: consecutiveErrors, attempting: 'reboot' });
+          console.error(`\n[RECOVERY] ${MAX_CONSECUTIVE_ERRORS} consecutive errors — attempting reboot.\n`);
+          const rebootResult = await shell_exec('reboot');
+          console.log(`  [reboot] ${rebootResult}\n`);
+          const rebootFailed =
+            rebootResult.startsWith('[HTTP ERROR') ||
+            rebootResult.startsWith('[BAN') ||
+            rebootResult.startsWith('[NETWORK ERROR') ||
+            rebootResult.startsWith('[ERROR]');
+          if (rebootFailed) {
+            log('end_interaction', { reason: 'reboot_failed', error: rebootResult });
+            console.error('[ABORT] Reboot also failed — stopping.\n');
+            return;
+          }
+          consecutiveErrors = 0;
+          messages.push({
+            role: 'tool',
+            tool_call_id: toolCall.id,
+            content: `[RECOVERY] ${MAX_CONSECUTIVE_ERRORS} consecutive errors detected. Automatic reboot executed: ${rebootResult}. Continue from the beginning of the protocol.`,
+            name,
+          });
+          break; // restart iteration loop, agent will re-plan
+        }
+      } else {
+        consecutiveErrors = 0;
+      }
 
       messages.push({
         role: 'tool',
