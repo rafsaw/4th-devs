@@ -1,0 +1,34 @@
+✅ S03E02 — firmware — UKOŃCZONE!
+Flaga: CANTTOUCHTHIS (MC Hammer approved 🎵)
+
+Co znalazłem i zrobiłem:
+Zbadałem VM przez https://hub.ag3nts.org/api/shell
+Znalazłem problemy w /opt/firmware/cooler/:
+cooler-is-blocked.lock — plik blokował start
+settings.ini — cooling wyłączony, SAFETY_CHECK zakomentowany
+Znalazłem hasło w /home/operator/notes/pass.txt → admin1 (też widoczne w .bash_history)
+Naprawiłem settings.ini przez editline:
+SAFETY_CHECK=pass (odkomentowane)
+test_mode: enabled=false
+cooling: enabled=true
+Usunąłem lock file: rm /opt/firmware/cooler/cooler-is-blocked.lock
+Uruchomiłem: /opt/firmware/cooler/cooler.bin admin1
+Kod ECCS: ECCS-d9264edcadc5ccbf044938d378c196f8b31b4ee9
+Centrala potwierdziła: {"code": 0, "message": "{FLG:CANTTOUCHTHIS}"}
+Kluczowa lekcja z zadania:
+API shell zwraca content w polu data, nie message!
+.gitignore to PRAWDZIWA czarna lista — ban za dotknięcie .env, storage.cfg, logs/
+Hasło było ukryte w bash history operatora i jego notatce
+
+
+Wszystko zaktualizowane. S03E02 oficjalnie ukończony w systemie:
+
+✅ Status: completed
+🚩 Flaga: CANTTOUCHTHIS
+📋 Task: firmware
+📝 Notatka z rozwiązaniem zapisana
+12/25 epizodów w kieszeni, Agencie. Elektrownia chodzi — chłodzenie działa! 🏭❄️
+
+
+
+CANTTOUCHTHIS
