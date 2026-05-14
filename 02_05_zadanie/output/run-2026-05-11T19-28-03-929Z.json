@@ -1,0 +1,21 @@
+{
+  "startedAt": "2026-05-11T19:28:03.641Z",
+  "provider": "openrouter",
+  "model": "openai/gpt-5.4",
+  "note": "Trace pokazuje wejscie/wyjscie modelu i drone API. Klucz API jest zamaskowany. Map analyst: kazda proba ma request i responseText. Drone operator: najpierw pobranie i analiza drone.html przez LLM, potem iteracyjne planowanie instructions przez LLM na podstawie dokumentacji i feedbacku API.",
+  "mapAnalyst": {
+    "attempts": []
+  },
+  "droneOperator": {
+    "docsAnalysisAttempts": [],
+    "iterations": []
+  },
+  "finishedAt": "2026-05-11T19:28:03.929Z",
+  "result": {
+    "status": "failed",
+    "sector": null,
+    "flag": null,
+    "totalAttempts": 0,
+    "errorMessage": "Map analyst failed: Model API error: Key limit exceeded (total limit). Manage it using https://openrouter.ai/settings/keys"
+  }
+}
