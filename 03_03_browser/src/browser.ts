@@ -2,8 +2,9 @@ import { chromium, type Browser, type BrowserContext, type Page } from 'playwrig
 import { existsSync } from 'fs';
 import { mkdir } from 'fs/promises';
 import { join, dirname } from 'path';
+import { fileURLToPath } from 'url';
 
-const ROOT = dirname(dirname(Bun.main));
+const ROOT = dirname(dirname(fileURLToPath(import.meta.url)));
 const SESSION_PATH = join(ROOT, 'data', 'session.json');
 const SCREENSHOTS_DIR = join(ROOT, 'data', 'screenshots');
 const DATA_DIR = join(ROOT, 'data');
@@ -32,8 +33,11 @@ export const launch = async (options: { headless: boolean }): Promise<BrowserSes
 
   const storagePath = options.headless ? await loadStorageState() : undefined;
 
+  const edgePath = 'C:\\Program Files (x86)\\Microsoft\\Edge\\Application\\msedge.exe';
   const browser = await chromium.launch({
     headless: options.headless,
+    // Use Edge for non-headless (login); bundled Chromium for headless (works with Node.js)
+    ...(options.headless ? {} : { executablePath: edgePath }),
     args: ['--disable-blink-features=AutomationControlled'],
   });
 

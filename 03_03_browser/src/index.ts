@@ -13,7 +13,12 @@ const loginFlow = async (): Promise<void> => {
   console.log('  1. Go to https://www.goodreads.com and log into your account.');
   console.log('  2. Once logged in, come back here and press Enter.\n');
 
-  await launch({ headless: false });
+  console.log('  Launching Edge browser...');
+  const { page } = await launch({ headless: false });
+  console.log('  Browser launched. Navigating to Goodreads...');
+  await page.bringToFront();
+  await page.goto('https://www.goodreads.com/user/sign_in');
+  console.log('  Goodreads login page opened in browser.');
 
   const rl = readline.createInterface({ input: process.stdin, output: process.stdout });
   await new Promise<void>((resolve) =>

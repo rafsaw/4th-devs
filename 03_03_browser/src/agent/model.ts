@@ -30,14 +30,12 @@ export const createModelResponse = async (params: {
   instructions: string;
   input: string | ResponseInputItem[];
   tools: FunctionTool[];
-  previousResponseId?: string;
 }): Promise<Response> =>
   openai().responses.create({
     model: DEFAULT_MODEL,
     instructions: params.instructions,
     input: params.input,
     tools: params.tools,
-    ...(params.previousResponseId ? { previous_response_id: params.previousResponseId } : {}),
   });
 
 export const extractFunctionCalls = (output: Response['output']): ResponseFunctionToolCall[] =>

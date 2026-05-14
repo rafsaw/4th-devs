@@ -1,8 +1,9 @@
 import { readdir } from 'fs/promises';
 import { existsSync } from 'fs';
 import { join, dirname } from 'path';
+import { fileURLToPath } from 'url';
 
-const INSTRUCTIONS_DIR = join(dirname(dirname(Bun.main)), 'instructions');
+const INSTRUCTIONS_DIR = join(dirname(dirname(fileURLToPath(import.meta.url))), 'instructions');
 
 const listInstructionFiles = async (): Promise<string[]> => {
   if (!existsSync(INSTRUCTIONS_DIR)) return [];

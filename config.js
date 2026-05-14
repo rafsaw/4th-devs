@@ -22,12 +22,15 @@ const VALID_OPENAI_SEARCH_CONTEXT_SIZES = new Set(["low", "medium", "high"]);
 const VALID_OPENROUTER_WEB_ENGINES = new Set(["native", "exa"]);
 const VALID_PROVIDERS = new Set(["openai", "openrouter"]);
 
-const [major] = process.versions.node.split(".").map(Number);
-if (major < MIN_NODE_VERSION) {
-  console.error(`\x1b[31mError: Node.js ${MIN_NODE_VERSION}+ is required\x1b[0m`);
-  console.error(`       Current version: ${process.versions.node}`);
-  console.error("       Please upgrade: https://nodejs.org/");
-  process.exit(1);
+const isBun = typeof process.versions.bun !== "undefined";
+if (!isBun) {
+  const [major] = process.versions.node.split(".").map(Number);
+  if (major < MIN_NODE_VERSION) {
+    console.error(`\x1b[31mError: Node.js ${MIN_NODE_VERSION}+ is required\x1b[0m`);
+    console.error(`       Current version: ${process.versions.node}`);
+    console.error("       Please upgrade: https://nodejs.org/");
+    process.exit(1);
+  }
 }
 
 const stripMatchingQuotes = (value) => {

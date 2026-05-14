@@ -19,15 +19,17 @@ import type { AgentResult, TokenUsage } from './types.js';
 export const runAgent = async (
   task: string,
   tools: ToolRegistry,
-  previousResponseId?: string,
+  _previousResponseId?: string,
   feedbackTracker?: FeedbackTracker,
 ): Promise<AgentResult> => {
   const functionTools = buildFunctionTools(tools);
   const instructions = await buildSystemPrompt();
   const feedback = feedbackTracker ?? createFeedbackTracker();
 
-  let responseId = previousResponseId;
-  let input: string | ResponseInputItem[] = [{ role: 'user', content: task }];
+  // Maintain full conversation history locally — avoids relying on previous_response_id
+  // which is not reliably supported by all providers (e.g. OpenRouter).
+  let history: ResponseInputItem[] = [{ role: 'user', content: task }];
+  let responseId: string | undefined;
   let interventionState = createInterventionState();
   const usage: TokenUsage = { input: 0, output: 0, cached: 0, total: 0 };
 
@@ -37,9 +39,8 @@ export const runAgent = async (
 
     const response = await createModelResponse({
       instructions,
-      input,
+      input: history,
       tools: functionTools,
-      previousResponseId: responseId,
     });
     responseId = response.id;
 
@@ -80,7 +81,14 @@ export const runAgent = async (
 
     const interventions = collectTurnInterventions(feedback, recoveredFromFailures, interventionState);
     interventionState = interventions.nextState;
-    input = [...toolResults, ...interventions.items];
+
+    // Append model's output + tool results to grow the history for the next turn
+    history = [
+      ...history,
+      ...(response.output as unknown as ResponseInputItem[]),
+      ...toolResults,
+      ...interventions.items,
+    ];
   }
 
   log.totalTokens(usage.input, usage.output, usage.cached, usage.total);

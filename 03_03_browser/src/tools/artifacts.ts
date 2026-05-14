@@ -1,9 +1,10 @@
 import { mkdir, readFile, writeFile } from 'fs/promises';
 import { dirname, join } from 'path';
+import { fileURLToPath } from 'url';
 import type { Page } from 'playwright';
 import type { ImageContent } from './types.js';
 
-const PAGES_DIR = join(dirname(dirname(Bun.main)), 'data', 'pages');
+const PAGES_DIR = join(dirname(dirname(dirname(fileURLToPath(import.meta.url)))), 'data', 'pages');
 
 const STRUCTURE_SCRIPT = `(() => {
   const walk = (el, depth = 0) => {
