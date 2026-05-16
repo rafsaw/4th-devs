@@ -1,6 +1,6 @@
 # 03_02_zadanie — firmware
 
-# RS>!!!! Doesnt work !!!!
+# RS>!!!! Ten kod tu nie dziala uzylem Klaudiusz zeby zrobil kod !!!!
 
 Agentic task: run `/opt/firmware/cooler/cooler.bin` on a restricted Linux VM via shell API, retrieve the `ECCS-xxx` code, and submit it to Centrala.
 
