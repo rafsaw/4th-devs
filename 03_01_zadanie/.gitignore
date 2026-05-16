@@ -1,0 +1,12 @@
+# Dependencies
+node_modules/
+
+# Lokalne sekrety (`.env.example` zostaje w repo)
+.env
+.env.*
+!.env.example
+
+# Artefakty / dane robocze
+output/
+*.tsbuildinfo
+dist/
